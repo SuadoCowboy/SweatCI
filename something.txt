@@ -1,0 +1,40 @@
+alias loops would be recognized with a '!' at the start of their names
+
+> aliasloop echo4EvrLmao "echo ez banana"
+> echo4EvrLmao
+> ez banana
+> ez banana
+> ez banana
+> ez banana
+> ...
+> echo4EvrLmao
+> # stopped spamming "ez banana"
+
+create toggle aliases (they use +/-)
+
+ex:
+
+# in the console it is basically useless, but in-game is useful
+> alias +a "echo on"; alias -a "echo off"
+> +a
+> on
+>
+> -a
+> off
+
+# in-game example:
+> alias +a "echo on"; alias -a "echo off"
+> bind w +a
+> w pressed
+> on
+> w released
+> off
+> # it works like an event
+
+so:
+alias banana # normal alias
+alias +banana # alias toggle - can only be checked with a game system or event handling or something
+alias !banana # loop alias
+!!! for now there is only normal alias implemented !!!
+
+console might be better off in a separate thread of the game
