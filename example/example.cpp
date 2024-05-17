@@ -34,7 +34,7 @@ int main()
 
     HayBCMD::Command("tf_fuck", 0, 1, CVAR_TF_FUCK_run, "- type: boolean - 1/0");
 
-    // Continue looping until the user enters "exit"
+    // Continue looping until the user enters "quit"
     std::string input;
     while (true) {
         std::getline(std::cin, input);
