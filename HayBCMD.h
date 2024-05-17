@@ -6,7 +6,7 @@
  * Copyright (c) 2024 Lucca Rieffel Silva, also as Suado Cowboy
  *
  * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the “Software”),
+ * a copy of this software and associated documentation files (the ï¿½Softwareï¿½),
  * to deal in the Software without restriction, including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
  * sell copies of the Software, and to permit persons to whom the Software
@@ -15,7 +15,7 @@
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+ * THE SOFTWARE IS PROVIDED ï¿½AS ISï¿½, WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
  * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
@@ -23,19 +23,12 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
- #ifdef HAYBCMD_EXPORTS
- #define HAYBCMD_API __declspec(dllexport)
- #else
- #define HAYBCMD_API __declspec(dllimport)
- #endif
-
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace HayBCMD {
-    enum HAYBCMD_API TokenType {
+    enum TokenType {
         NOTHING = 0,
         VARIABLE,
         STRING,
@@ -46,7 +39,7 @@ namespace HayBCMD {
     
     std::string tokenTypeToString(const TokenType& type);
 
-    class HAYBCMD_API Token {
+    class Token {
     public:
         Token();
         ~Token();
@@ -63,7 +56,7 @@ namespace HayBCMD {
         std::string value;
     };
 
-    class HAYBCMD_API Output {
+    class Output {
     public:
         static void print(const std::string& str);
         static void setPrintFunction(void (*printFunction)(const std::string&));
@@ -76,7 +69,7 @@ namespace HayBCMD {
         static void (*printFunction)(const std::string&);
     };
 
-    class HAYBCMD_API Command {
+    class Command {
     public:
         std::string name;
         int minArgs;
@@ -97,7 +90,7 @@ namespace HayBCMD {
         static void addCommand(const Command& command);
     };
 
-    class HAYBCMD_API BaseCommands {
+    class BaseCommands {
     public:
         static void init(std::unordered_map<std::string, std::string>* variables);
 
@@ -112,7 +105,7 @@ namespace HayBCMD {
         static void incrementvar(const Command& commandClass, const std::vector<std::string>& args);
     };
 
-    class HAYBCMD_API Lexer {
+    class Lexer {
     public:
         Lexer(const std::string& input);
 
@@ -129,7 +122,7 @@ namespace HayBCMD {
         Token lastToken;
     };
 
-    class HAYBCMD_API Parser {
+    class Parser {
     public:
         Parser(Lexer* lexer, std::unordered_map<std::string, std::string>& variables);
         void parse();
