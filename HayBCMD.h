@@ -30,7 +30,6 @@
 namespace HayBCMD {
     enum TokenType {
         NOTHING = 0,
-        VARIABLE,
         STRING,
         COMMAND,
         _EOF,
@@ -55,6 +54,7 @@ namespace HayBCMD {
         Data(bool b);
         Data(std::string s);
         Data(const char* s);
+        Data(char s);
 
         std::string toString();
     };

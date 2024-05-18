@@ -31,8 +31,6 @@
 namespace HayBCMD {
     std::string tokenTypeToString(const TokenType& type) {
         switch (type) {
-        case VARIABLE:
-            return "VARIABLE";
         case STRING:
             return "STRING";
         case COMMAND:
@@ -52,6 +50,9 @@ namespace HayBCMD {
     Data::Data(bool b) : type(Type::BOOL), b(b) {}
     Data::Data(std::string s) : type(Type::STRING), s(s) {}
     Data::Data(const char* _s) : type(Type::STRING) {
+        s = _s;
+    }
+    Data::Data(char _s) : type(Type::STRING) {
         s = _s;
     }
 
@@ -332,10 +333,6 @@ namespace HayBCMD {
         return lastToken;
     }
 
-    bool Lexer::isVariable(const std::string& identifier) {
-        return identifier.front() == '$';
-    }
-
     bool Lexer::isCommand(const std::string& commandName) {
         for (const auto& command : Command::getCommands()) {
 
@@ -358,25 +355,25 @@ namespace HayBCMD {
 
         if (isCommand(tokenValue) && (lastToken.getType() == TokenType::NOTHING || lastToken.getType() != TokenType::COMMAND))
             return Token(TokenType::COMMAND, tokenValue);
-        else if (isVariable(tokenValue))
-            return Token(TokenType::VARIABLE, tokenValue);
         else
             return Token(TokenType::STRING, tokenValue);
     }
 
     Token Lexer::parseString() {
-        std::string tokenValue;
+        std::string tokenValue = "";
 
         position++; // Skip the first double quote
+
         while (position < input.length() && input[position] != '"') {
-            if (input[position] == '\\' && position + 1 < input.length() && input[position] == '"')
-                position++; // Skip the backslash
+            if (input[position] == '\\' && position + 1 < input.length() && input[position+1] == '"')
+                position++; // Skip the double backslash!?:!!?
 
             tokenValue += input[position];
             position++;
         }
 
-        position++; // Skip the last double quote
+        if (input[position] == '"')
+            position++; // Skip the last double quote if exists
 
         return Token(TokenType::STRING, tokenValue);
     }
@@ -413,15 +410,41 @@ namespace HayBCMD {
         std::vector<std::string> arguments;
 
         while (currentToken.getType() != TokenType::_EOF && currentToken.getType() != TokenType::EOS) {
-            // yes... it's also appending command type.
-            if (currentToken.getType() == TokenType::STRING || currentToken.getType() == TokenType::COMMAND)
+            // yes... it's just appending command type
+            if (currentToken.getType() == TokenType::COMMAND)
                 arguments.push_back(currentToken.getValue());
-            else if (currentToken.getType() == TokenType::VARIABLE) {
-                auto it = variables.find(currentToken.getValue().substr(1));
-                if (it != variables.end())
-                    arguments.push_back(it->second);
-                else // in case user is confused why his (unexistent)variable is not passing his value
-                    arguments.push_back(currentToken.getValue());
+            
+            else if (currentToken.getType() == TokenType::STRING) {
+                std::string result = "";
+                size_t position = 0;
+                
+                while (position < currentToken.getValue().length()) {
+                    if (currentToken.getValue()[position] == '$') { // if is variable
+                        // get variable name
+                        
+                        position++; // skip '$'
+
+                        std::string variable = "";
+                        while (position < currentToken.getValue().length() && currentToken.getValue()[position] != ' ' && currentToken.getValue()[position] != '"') {
+                            variable += currentToken.getValue()[position];
+                            position++;
+                        }
+                        
+                        auto it = variables.find(variable);
+                        if (it != variables.end())
+                            result += it->second; // add variable
+                        else
+                            result += variable; // or else just add with the $
+                    }
+
+                    if (currentToken.getValue()[position] == '\\' && position+1 < currentToken.getValue().length() && currentToken.getValue()[position+1] == '$')
+                        position++;
+
+                    result += currentToken.getValue()[position];
+                    position++;
+                }
+
+                arguments.push_back(result);
             }
 
             advance();
