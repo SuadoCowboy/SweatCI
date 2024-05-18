@@ -365,8 +365,13 @@ namespace HayBCMD {
         position++; // Skip the first double quote
 
         while (position < input.length() && input[position] != '"') {
-            if (input[position] == '\\' && position + 1 < input.length() && input[position+1] == '"')
-                position++; // Skip the double backslash!?:!!?
+            // escape '\\'
+            if (input[position] == '\\' && position + 1 < input.length() && input[position+1] == '\\')
+                position++;
+            
+            // escape '"'
+            else if (input[position] == '\\' && position + 1 < input.length() && input[position+1] == '"')
+                position++;
 
             tokenValue += input[position];
             position++;
@@ -378,17 +383,154 @@ namespace HayBCMD {
         return Token(TokenType::STRING, tokenValue);
     }
 
-    std::vector<std::string> splitString(const std::string& str, char delimiter) {
-        std::vector<std::string> tokens;
-        std::istringstream iss(str);
-        std::string token;
+    void CVARStorage::cvar(const std::string& name, bool value, const std::string& usage) {
+            boolCvars[name] = value;
 
-        while (std::getline(iss, token, delimiter)) {
-            tokens.push_back(token);
+            Command(name, 0, 1, (CommandCall)asCommand,
+                    formatString("(boolean) - {}", {{usage}}));
+        }
+        
+    void CVARStorage::cvar(const std::string& name, float value, const std::string& usage) {
+        floatCvars[name] = value;
+
+        Command(name, 0, 1, (CommandCall)asCommand,
+                formatString("(float) - {}", {{usage}}));
+    }
+    
+    void CVARStorage::cvar(const std::string& name, const std::string& value, const std::string& usage) {
+        stringCvars[name] = value;
+
+        Command(name, 0, 1, (CommandCall)asCommand,
+                formatString("(string) - {}", {{usage}}));
+    }
+
+    void CVARStorage::cvar(const std::string& name, const char* value, const std::string& usage) {
+        stringCvars[name] = {value};
+
+        Command(name, 0, 1, (CommandCall)asCommand,
+                formatString("(string) - {}", {{usage}}));
+    }
+
+    void CVARStorage::setCvar(const std::string& name, bool value) {
+        if (boolCvars.count(name) == 0) {
+            Output::printf("ERROR: tried to change value of non-existent boolean CVAR \"{}\"", {{name}});
+            return;
         }
 
-        return tokens;
+        boolCvars[name] = value;
     }
+
+    void CVARStorage::setCvar(const std::string& name, float value) {
+        if (floatCvars.count(name) == 0) {
+            Output::printf("ERROR: tried to change value of non-existent float CVAR \"{}\"", {{name}});
+            return;
+        }
+
+        floatCvars[name] = value;
+    }
+
+    void CVARStorage::setCvar(const std::string& name, const std::string& value) {
+        if (stringCvars.count(name) == 0) {
+            Output::printf("ERROR: tried to change value of non-existent string CVAR \"{}\"", {{name}});
+            return;
+        }
+
+        stringCvars[name] = value;
+    }
+
+    void CVARStorage::setCvar(const std::string& name, const char* value) {
+        if (stringCvars.count(name) == 0) {
+            Output::printf("ERROR: tried to change value of non-existent string CVAR \"{}\"", {{name}});
+            return;
+        }
+
+        stringCvars[name] = {value};
+    }
+
+    // Searches for the CVAR and returns it to a buffer
+    // @return false if could not get cvar
+    bool CVARStorage::getCvar(const std::string& name, bool& buf) {
+        for (auto cvar : boolCvars)
+            if (cvar.first == name) {buf = cvar.second; return true;}
+        return false;
+    }
+
+    // Searches for the CVAR and returns it to a buffer
+    // @return false if could not get cvar
+    bool CVARStorage::getCvar(const std::string& name, std::string& buf) {
+        for (auto cvar : stringCvars)
+            if (cvar.first == name) {buf = cvar.second; return true;}
+        return false;
+    }
+
+    // Searches for the CVAR and returns it to a buffer
+    // @return false if could not get cvar
+    bool CVARStorage::getCvar(const std::string& name, float& buf) {
+        for (auto cvar : floatCvars)
+            if (cvar.first == name) {buf = cvar.second; return true;}
+        return false;
+    }
+    
+    void CVARStorage::asCommand(Command* pCommand, const std::vector<std::string>& args) {
+        char type = pCommand->usage.at(1); // usage = "(string/float/boolean) [...]"; this gets the first char after '('
+        
+        // if should print to output
+        if (args.size() == 0) {
+            if (type == 'b') {
+                bool buf;
+                getCvar(pCommand->name, buf);
+                Output::printf("{}\n", {{buf}});
+            
+            } else if (type == 'f') {
+                float buf;
+                getCvar(pCommand->name, buf);
+                Output::printf("{}\n", {{buf}});
+            
+            } else if (type == 's') {
+                std::string buf;
+                getCvar(pCommand->name, buf);
+                Output::printf("{}\n", {{buf}});
+            }
+            return;
+        }
+
+        // if should set value
+        if (type == 'b')
+            try {
+                boolCvars[pCommand->name] = (bool)std::stoi(args[0]);
+            } catch (...) {
+                Command::printUsage(*pCommand);
+            }
+        
+        else if (type == 'f')
+            try {
+                floatCvars[pCommand->name] = std::stof(args[0]);
+            } catch (...) {
+                Command::printUsage(*pCommand);
+            }
+        
+        else if (type == 's')
+            try {
+                stringCvars[pCommand->name] = args[0];
+            } catch (...) {
+                Command::printUsage(*pCommand);
+            }
+    }
+
+    char CVARStorage::getCvarType(const std::string& name) {
+        bool bBuf;
+        std::string sBuf;
+        float fBuf;
+        if (getCvar(name, bBuf)) return 'b';
+        if (getCvar(name, sBuf)) return 's';
+        if (getCvar(name, fBuf)) return 'f';
+
+        return 'n';
+    }
+
+    std::unordered_map<std::string, bool> CVARStorage::boolCvars;
+    std::unordered_map<std::string, float> CVARStorage::floatCvars;
+    std::unordered_map<std::string, std::string> CVARStorage::stringCvars;
 
     Parser::Parser(Lexer* lexer, std::unordered_map<std::string, std::string>& variables) : lexer(lexer), variables(variables) {
         advance();
@@ -419,7 +561,7 @@ namespace HayBCMD {
                 size_t position = 0;
                 
                 while (position < currentToken.getValue().length()) {
-                    if (currentToken.getValue()[position] == '$') { // if is variable
+                    if (currentToken.getValue()[position] == '$') { // if is variable or cvariable
                         // get variable name
                         
                         position++; // skip '$'
@@ -431,10 +573,29 @@ namespace HayBCMD {
                         }
                         
                         auto it = variables.find(variable);
-                        if (it != variables.end())
+                        if (it != variables.end()) {
                             result += it->second; // add variable
-                        else
-                            result += variable; // or else just add with the $
+                        
+                        } else { // search in cvars
+                            char cvarType = CVARStorage::getCvarType(variable);
+                            if (cvarType == 'b') {
+                                bool buf;
+                                CVARStorage::getCvar(variable, buf);
+                                result += std::to_string(buf);
+                            
+                            } else if (cvarType == 'f') {
+                                float buf;
+                                CVARStorage::getCvar(variable, buf);
+                                result += std::to_string(buf);
+                            
+                            } else if (cvarType == 's') {
+                                std::string buf;
+                                CVARStorage::getCvar(variable, buf);
+                                result += buf;
+                            
+                            } else
+                                result += "$" + variable; // or else just add with the $
+                        }
                     }
 
                     if (currentToken.getValue()[position] == '\\' && position+1 < currentToken.getValue().length() && currentToken.getValue()[position+1] == '$')
