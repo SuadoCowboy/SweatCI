@@ -36,7 +36,31 @@ namespace HayBCMD {
         _EOF,
         EOS
     };
-    
+
+    // Structure for formatString.
+    // Usually you won't need to use this structure.
+    struct Data {
+        enum class Type {INT, DOUBLE, FLOAT, BOOL, STRING};
+
+        int i;
+        double d;
+        float f;
+        bool b;
+        std::string s;
+        Type type;
+
+        Data(int i);
+        Data(double d);
+        Data(float f);
+        Data(bool b);
+        Data(std::string s);
+        Data(const char* s);
+
+        std::string toString();
+    };
+
+    std::string formatString(std::string format, const std::vector<Data>& args);
+
     std::string tokenTypeToString(const TokenType& type);
 
     class Token {
@@ -56,18 +80,27 @@ namespace HayBCMD {
         std::string value;
     };
 
+    typedef void (*PrintFunction)(const std::string& message);
+
     class Output {
     public:
+        static void printf(const std::string& format, const std::vector<Data>& args);
+
         static void print(const std::string& str);
-        static void setPrintFunction(void (*printFunction)(const std::string&));
+
+        static void setPrintFunction(PrintFunction printFunc);
 
         static void printUnknownCommand(std::string command) {
             print("unknown command \"" + command + "\"\n");
         }
 
     private:
-        static void (*printFunction)(const std::string&);
+        static PrintFunction printFunc;
     };
+
+    class Command;
+
+    typedef void (*CommandCall)(Command* pCommand, const std::vector<std::string>& args);
 
     class Command {
     public:
@@ -76,7 +109,7 @@ namespace HayBCMD {
         int maxArgs;
         std::string usage;
 
-        Command(const std::string& name, int minArgs, int maxArgs, void (*runFunc)(const Command&, const std::vector<std::string>&), const std::string& usage);
+        Command(const std::string& name, int minArgs, int maxArgs, CommandCall commandCallFunc, const std::string& usage);
         static Command* getCommand(const std::string& name, bool printError);
         static const std::vector<Command>& getCommands();
         static void printUsage(const Command& command);
@@ -84,10 +117,10 @@ namespace HayBCMD {
         void run(const std::vector<std::string>& args);
 
     private:
-        void (*runFunc)(const Command&, const std::vector<std::string>&);
+        CommandCall commandCallFunc;
 
         static std::vector<Command> commands;
-        static void addCommand(const Command& command);
+        static void addCommand(Command* pCommand);
     };
 
     class BaseCommands {
@@ -97,12 +130,12 @@ namespace HayBCMD {
     private:
         static std::unordered_map<std::string, std::string>* variables;
 
-        static void help(const Command& commandClass, const std::vector<std::string>& args);
-        static void echo(const Command& commandClass, const std::vector<std::string>& args);
-        static void alias(const Command& commandClass, const std::vector<std::string>& args);
-        static void getVariables(const Command& commandClass, const std::vector<std::string>& args);
-        static void variable(const Command& commandClass, const std::vector<std::string>& args);
-        static void incrementvar(const Command& commandClass, const std::vector<std::string>& args);
+        static void help(Command* _pCommand, const std::vector<std::string>& args);
+        static void echo(Command* _pCommand, const std::vector<std::string>& args);
+        static void alias(Command* _pCommand, const std::vector<std::string>& args);
+        static void getVariables(Command* _pCommand, const std::vector<std::string>& args);
+        static void variable(Command* _pCommand, const std::vector<std::string>& args);
+        static void incrementvar(Command* _pCommand, const std::vector<std::string>& args);
     };
 
     class Lexer {

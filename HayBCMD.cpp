@@ -4,7 +4,7 @@
  * Copyright (c) 2024 Lucca Rieffel Silva, also as Suado Cowboy
  *
  * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the �Software�),
+ * a copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
  * sell copies of the Software, and to permit persons to whom the Software
@@ -13,7 +13,7 @@
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED �AS IS�, WITHOUT WARRANTY OF ANY KIND,
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
  * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
@@ -46,6 +46,43 @@ namespace HayBCMD {
         return "UNKNOWN";
     }
 
+    Data::Data(int i) : type(Type::INT), i(i) {}
+    Data::Data(double d) : type(Type::DOUBLE), d(d) {}
+    Data::Data(float f) : type(Type::FLOAT), f(f) {}
+    Data::Data(bool b) : type(Type::BOOL), b(b) {}
+    Data::Data(std::string s) : type(Type::STRING), s(s) {}
+    Data::Data(const char* _s) : type(Type::STRING) {
+        s = _s;
+    }
+
+    std::string Data::toString() {
+        if (type == Type::INT)
+            return std::to_string(i);
+        else if (type == Type::DOUBLE)
+            return std::to_string(d);
+        else if (type == Type::FLOAT)
+            return std::to_string(f);
+        else if (type == Type::BOOL)
+            return b? "true" : "false";
+        else
+            return s;
+    }
+
+    std::string formatString(std::string format, const std::vector<Data>& args) {
+        for (auto arg : args) {
+            size_t idx = format.find("{}");
+
+            if (idx == std::string::npos)
+                throw std::runtime_error("Too much arguments for little format variables");
+            
+            std::stringstream oss;
+            oss << format.substr(0, idx) << arg.toString() << format.substr(idx+2);
+            format = oss.str();
+        }
+
+        return format;
+    }
+
     Token::Token() : type(NOTHING), value("") {}
     Token::~Token() {}
 
@@ -70,30 +107,33 @@ namespace HayBCMD {
         return "Token(" + tokenTypeToString(type) + ", \"" + value + "\")";
     }
 
-    void (*Output::printFunction)(const std::string&);
+    void Output::setPrintFunction(PrintFunction _printFunc) {
+        printFunc = _printFunc;
+    }
 
-    void Output::setPrintFunction(void (*_printFunction)(const std::string&)) {
-        printFunction = _printFunction;
+    void Output::printf(const std::string& format, const std::vector<Data>& args) {
+        print(formatString(format, args));
     }
 
     void Output::print(const std::string& str) {
-        printFunction(str);
+        printFunc(str);
     }
 
-    std::vector<Command> Command::commands;
+    PrintFunction Output::printFunc;
 
-    void Command::addCommand(const Command& command) {
+    void Command::addCommand(Command* pCommand) {
         for (const auto& c : commands) {
-            if (c.name == command.name) {
-                throw std::runtime_error("Command with name \"" + command.name + "\" already exists");
+            if (c.name == pCommand->name) {
+                Output::printf("ERROR: Command with name \"{s}\" already exists\n", {{pCommand->name}});
+                return;
             }
         }
-        commands.push_back(command);
+        commands.push_back(*pCommand);
     }
 
-    Command::Command(const std::string& name, int minArgs, int maxArgs, void(*runFunc)(const Command&, const std::vector<std::string>&), const std::string& usage)
-        : name(name), minArgs(minArgs), maxArgs(maxArgs), runFunc(runFunc), usage(usage) {
-        addCommand(*this);
+    Command::Command(const std::string& name, int minArgs, int maxArgs, CommandCall commandCallFunc, const std::string& usage)
+        : name(name), minArgs(minArgs), maxArgs(maxArgs), commandCallFunc(commandCallFunc), usage(usage) {
+        addCommand(this);
     }
 
     Command* Command::getCommand(const std::string& name, bool printError) {
@@ -126,24 +166,24 @@ namespace HayBCMD {
     }
 
     void Command::run(const std::vector<std::string>& args) {
-        runFunc(*this, args);
+        (*commandCallFunc)(this, args);
     }
 
-    std::unordered_map<std::string, std::string>* BaseCommands::variables;
+    std::vector<Command> Command::commands;
 
     void BaseCommands::init(std::unordered_map<std::string, std::string>* _variables) {
         variables = _variables;
 
         // Add commands
-        Command("help", 0, 1, help, "<command?> - shows a list of commands usages or the usage of a specific command");
-        Command("echo", 1, 1, echo, "<message> - echoes a message to the console");
-        Command("alias", 1, 2, alias, "<var> <commands?> - creates/deletes variables");
-        Command("variables", 0, 0, getVariables, "- list of variables");
-        Command("variable", 1, 1, variable, "- shows variable value");
-        Command("incrementvar", 4, 4, incrementvar, "<var> <minValue> <maxValue> <delta> - increments the value of a variable");
+        Command("help", 0, 1, (CommandCall)help, "<command?> - shows a list of commands usages or the usage of a specific command");
+        Command("echo", 1, 1, (CommandCall)echo, "<message> - echoes a message to the console");
+        Command("alias", 1, 2, (CommandCall)alias, "<var> <commands?> - creates/deletes variables");
+        Command("variables", 0, 0, (CommandCall)getVariables, "- list of variables");
+        Command("variable", 1, 1, (CommandCall)variable, "- shows variable value");
+        Command("incrementvar", 4, 4, (CommandCall)incrementvar, "<var> <minValue> <maxValue> <delta> - increments the value of a variable");
     }
 
-    void BaseCommands::help(const Command& commandClass, const std::vector<std::string>& args) {
+    void BaseCommands::help(Command* _pCommand, const std::vector<std::string>& args) {
         if (args.size() == 1) {
             // Print usage for a specific command
             Command* command = Command::getCommand(args[0], true);
@@ -158,7 +198,7 @@ namespace HayBCMD {
         }
     }
 
-    void BaseCommands::echo(const Command& commandClass, const std::vector<std::string>& args) {
+    void BaseCommands::echo(Command* _pCommand, const std::vector<std::string>& args) {
         std::string message;
         for (const auto& arg : args) {
             message += arg;
@@ -166,7 +206,7 @@ namespace HayBCMD {
         Output::print(message + '\n');
     }
 
-    void BaseCommands::alias(const Command& commandClass, const std::vector<std::string>& args) {
+    void BaseCommands::alias(Command* _pCommand, const std::vector<std::string>& args) {
         if (args.size() == 1) {
             variables->erase(args[0]);
             return;
@@ -186,7 +226,7 @@ namespace HayBCMD {
         (*variables)[args[0]] = args[1];
     }
 
-    void BaseCommands::getVariables(const Command& commandClass, const std::vector<std::string>& args) {
+    void BaseCommands::getVariables(Command* _pCommand, const std::vector<std::string>& args) {
         std::string output;
         int count = 0;
 
@@ -205,7 +245,7 @@ namespace HayBCMD {
         Output::print(out.str());
     }
 
-    void BaseCommands::variable(const Command& commandClass, const std::vector<std::string>& args) {
+    void BaseCommands::variable(Command* _pCommand, const std::vector<std::string>& args) {
         const std::string& key = args[0];
         auto it = variables->find(key);
         if (it == variables->end()) {
@@ -216,7 +256,7 @@ namespace HayBCMD {
         Output::print(key + " = \"" + it->second + "\"\n");
     }
 
-    void BaseCommands::incrementvar(const Command& commandClass, const std::vector<std::string>& args) {
+    void BaseCommands::incrementvar(Command* _pCommand, const std::vector<std::string>& args) {
         const std::string& variable = args[0];
         double minValue, maxValue, delta;
 
@@ -259,6 +299,8 @@ namespace HayBCMD {
 
         (*variables)[variable] = std::to_string(variableValue);
     }
+
+    std::unordered_map<std::string, std::string>* BaseCommands::variables;
 
     Lexer::Lexer(const std::string& _input) : position(0), input(_input) {}
 
