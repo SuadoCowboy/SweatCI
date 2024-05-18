@@ -390,8 +390,8 @@ namespace HayBCMD {
                     formatString("(boolean) - {}", {{usage}}));
         }
         
-    void CVARStorage::cvar(const std::string& name, float value, const std::string& usage) {
-        floatCvars[name] = value;
+    void CVARStorage::cvar(const std::string& name, double value, const std::string& usage) {
+        doubleCvars[name] = value;
 
         Command(name, 0, 1, (CommandCall)asCommand,
                 formatString("(float) - {}", {{usage}}));
@@ -420,13 +420,13 @@ namespace HayBCMD {
         boolCvars[name] = value;
     }
 
-    void CVARStorage::setCvar(const std::string& name, float value) {
-        if (floatCvars.count(name) == 0) {
+    void CVARStorage::setCvar(const std::string& name, double value) {
+        if (doubleCvars.count(name) == 0) {
             Output::printf("ERROR: tried to change value of non-existent float CVAR \"{}\"", {{name}});
             return;
         }
 
-        floatCvars[name] = value;
+        doubleCvars[name] = value;
     }
 
     void CVARStorage::setCvar(const std::string& name, const std::string& value) {
@@ -465,8 +465,8 @@ namespace HayBCMD {
 
     // Searches for the CVAR and returns it to a buffer
     // @return false if could not get cvar
-    bool CVARStorage::getCvar(const std::string& name, float& buf) {
-        for (auto cvar : floatCvars)
+    bool CVARStorage::getCvar(const std::string& name, double& buf) {
+        for (auto cvar : doubleCvars)
             if (cvar.first == name) {buf = cvar.second; return true;}
         return false;
     }
@@ -481,8 +481,8 @@ namespace HayBCMD {
                 getCvar(pCommand->name, buf);
                 Output::printf("{}\n", {{buf}});
             
-            } else if (type == 'f') {
-                float buf;
+            } else if (type == 'd') {
+                double buf;
                 getCvar(pCommand->name, buf);
                 Output::printf("{}\n", {{buf}});
             
@@ -504,7 +504,7 @@ namespace HayBCMD {
         
         else if (type == 'f')
             try {
-                floatCvars[pCommand->name] = std::stof(args[0]);
+                doubleCvars[pCommand->name] = std::stof(args[0]);
             } catch (...) {
                 Command::printUsage(*pCommand);
             }
@@ -520,16 +520,16 @@ namespace HayBCMD {
     char CVARStorage::getCvarType(const std::string& name) {
         bool bBuf;
         std::string sBuf;
-        float fBuf;
+        double dBuf;
         if (getCvar(name, bBuf)) return 'b';
         if (getCvar(name, sBuf)) return 's';
-        if (getCvar(name, fBuf)) return 'f';
+        if (getCvar(name, dBuf)) return 'd';
 
         return 'n';
     }
 
     std::unordered_map<std::string, bool> CVARStorage::boolCvars;
-    std::unordered_map<std::string, float> CVARStorage::floatCvars;
+    std::unordered_map<std::string, double> CVARStorage::doubleCvars;
     std::unordered_map<std::string, std::string> CVARStorage::stringCvars;
 
     Parser::Parser(Lexer* lexer, std::unordered_map<std::string, std::string>& variables) : lexer(lexer), variables(variables) {
@@ -583,8 +583,8 @@ namespace HayBCMD {
                                 CVARStorage::getCvar(variable, buf);
                                 result += std::to_string(buf);
                             
-                            } else if (cvarType == 'f') {
-                                float buf;
+                            } else if (cvarType == 'd') {
+                                double buf;
                                 CVARStorage::getCvar(variable, buf);
                                 result += std::to_string(buf);
                             
