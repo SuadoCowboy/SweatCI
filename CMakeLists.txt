@@ -11,7 +11,3 @@ target_include_directories(HayBCMD PRIVATE ${PROJECT_SOURCE_DIR}) # HayBCMD.h
 if(BUILD_EXAMPLE)
 add_subdirectory(${PROJECT_SOURCE_DIR}/example)
 endif()
-
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-include(CPack)
