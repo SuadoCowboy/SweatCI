@@ -23,9 +23,7 @@
  */
 #include "HayBCMD.h"
 
-#include <stdexcept>
 #include <regex>
-#include <sstream>
 #include <algorithm>
 
 namespace HayBCMD {
@@ -42,46 +40,6 @@ namespace HayBCMD {
         }
 
         return "UNKNOWN";
-    }
-
-    Data::Data(int i) : type(Type::INT), i(i) {}
-    Data::Data(double d) : type(Type::DOUBLE), d(d) {}
-    Data::Data(float f) : type(Type::FLOAT), f(f) {}
-    Data::Data(bool b) : type(Type::BOOL), b(b) {}
-    Data::Data(std::string s) : type(Type::STRING), s(s) {}
-    Data::Data(const char* _s) : type(Type::STRING) {
-        s = _s;
-    }
-    Data::Data(char _s) : type(Type::STRING) {
-        s = _s;
-    }
-
-    std::string Data::toString() {
-        if (type == Type::INT)
-            return std::to_string(i);
-        else if (type == Type::DOUBLE)
-            return std::to_string(d);
-        else if (type == Type::FLOAT)
-            return std::to_string(f);
-        else if (type == Type::BOOL)
-            return b? "true" : "false";
-        else
-            return s;
-    }
-
-    std::string formatString(std::string format, const std::vector<Data>& args) {
-        for (auto arg : args) {
-            size_t idx = format.find("{}");
-
-            if (idx == std::string::npos)
-                throw std::runtime_error("Too much arguments for little format variables");
-            
-            std::stringstream oss;
-            oss << format.substr(0, idx) << arg.toString() << format.substr(idx+2);
-            format = oss.str();
-        }
-
-        return format;
     }
 
     Token::Token() : type(NOTHING), value("") {}
@@ -112,10 +70,6 @@ namespace HayBCMD {
         printFunc = _printFunc;
     }
 
-    void Output::printf(const std::string& format, const std::vector<Data>& args) {
-        print(formatString(format, args));
-    }
-
     void Output::print(const std::string& str) {
         printFunc(str);
     }
@@ -125,7 +79,7 @@ namespace HayBCMD {
     void Command::addCommand(Command* pCommand) {
         for (const auto& c : commands) {
             if (c.name == pCommand->name) {
-                Output::printf("ERROR: Command with name \"{s}\" already exists\n", {{pCommand->name}});
+                Output::printf("ERROR: Command with name \"{s}\" already exists\n", pCommand->name);
                 return;
             }
         }
@@ -387,33 +341,33 @@ namespace HayBCMD {
             boolCvars[name] = value;
 
             Command(name, 0, 1, (CommandCall)asCommand,
-                    formatString("(boolean) - {}", {{usage}}));
+                    formatString("(boolean) - {}", usage));
         }
         
     void CVARStorage::cvar(const std::string& name, double value, const std::string& usage) {
         doubleCvars[name] = value;
 
         Command(name, 0, 1, (CommandCall)asCommand,
-                formatString("(float) - {}", {{usage}}));
+                formatString("(float) - {}", usage));
     }
     
     void CVARStorage::cvar(const std::string& name, const std::string& value, const std::string& usage) {
         stringCvars[name] = value;
 
         Command(name, 0, 1, (CommandCall)asCommand,
-                formatString("(string) - {}", {{usage}}));
+                formatString("(string) - {}", usage));
     }
 
     void CVARStorage::cvar(const std::string& name, const char* value, const std::string& usage) {
         stringCvars[name] = {value};
 
         Command(name, 0, 1, (CommandCall)asCommand,
-                formatString("(string) - {}", {{usage}}));
+                formatString("(string) - {}", usage));
     }
 
     void CVARStorage::setCvar(const std::string& name, bool value) {
         if (boolCvars.count(name) == 0) {
-            Output::printf("ERROR: tried to change value of non-existent boolean CVAR \"{}\"", {{name}});
+            Output::printf("ERROR: tried to change value of non-existent boolean CVAR \"{}\"", name);
             return;
         }
 
@@ -422,7 +376,7 @@ namespace HayBCMD {
 
     void CVARStorage::setCvar(const std::string& name, double value) {
         if (doubleCvars.count(name) == 0) {
-            Output::printf("ERROR: tried to change value of non-existent float CVAR \"{}\"", {{name}});
+            Output::printf("ERROR: tried to change value of non-existent float CVAR \"{}\"", name);
             return;
         }
 
@@ -431,7 +385,7 @@ namespace HayBCMD {
 
     void CVARStorage::setCvar(const std::string& name, const std::string& value) {
         if (stringCvars.count(name) == 0) {
-            Output::printf("ERROR: tried to change value of non-existent string CVAR \"{}\"", {{name}});
+            Output::printf("ERROR: tried to change value of non-existent string CVAR \"{}\"", name);
             return;
         }
 
@@ -440,7 +394,7 @@ namespace HayBCMD {
 
     void CVARStorage::setCvar(const std::string& name, const char* value) {
         if (stringCvars.count(name) == 0) {
-            Output::printf("ERROR: tried to change value of non-existent string CVAR \"{}\"", {{name}});
+            Output::printf("ERROR: tried to change value of non-existent string CVAR \"{}\"", name);
             return;
         }
 
@@ -479,17 +433,17 @@ namespace HayBCMD {
             if (type == 'b') {
                 bool buf;
                 getCvar(pCommand->name, buf);
-                Output::printf("{}\n", {{buf}});
+                Output::printf("{}\n", buf);
             
             } else if (type == 'd') {
                 double buf;
                 getCvar(pCommand->name, buf);
-                Output::printf("{}\n", {{buf}});
+                Output::printf("{}\n", buf);
             
             } else if (type == 's') {
                 std::string buf;
                 getCvar(pCommand->name, buf);
-                Output::printf("{}\n", {{buf}});
+                Output::printf("{}\n", buf);
             }
             return;
         }

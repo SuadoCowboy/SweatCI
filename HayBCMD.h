@@ -24,6 +24,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 #include <string>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
@@ -36,30 +37,33 @@ namespace HayBCMD {
         EOS
     };
 
-    // Structure for formatString.
-    // Usually you won't need to use this structure.
-    struct Data {
-        enum class Type {INT, DOUBLE, FLOAT, BOOL, STRING};
+    /// @warning this function is not meant to be used outside this header
+    template<typename ...>
+    static void _formatStringValue(const std::string& format, std::stringstream& buf) {
+        buf << format;
+    }
 
-        int i;
-        double d;
-        float f;
-        bool b;
-        std::string s;
-        Type type;
+    /// @warning this function is not meant to be used outside this header
+    template<typename T, typename ... Args>
+    static void _formatStringValue(const std::string& format, std::stringstream& buf, T value, Args& ... args) {
+        size_t idx = format.find("{}");
+        if (idx == std::string::npos) {
+            buf << format;
+            return;
+        }
 
-        Data(int i);
-        Data(double d);
-        Data(float f);
-        Data(bool b);
-        Data(std::string s);
-        Data(const char* s);
-        Data(char s);
+        buf << format.substr(0, idx) << value;
+        
+        _formatStringValue(format.substr(idx+2), buf, args...);
+    }
 
-        std::string toString();
-    };
-
-    std::string formatString(std::string format, const std::vector<Data>& args);
+    template<typename ... Args>
+    std::string formatString(const std::string& format, Args ... args)
+    {
+        std::stringstream buf;
+        _formatStringValue(format, buf, args...);
+        return buf.str();
+    }
 
     std::string tokenTypeToString(const TokenType& type);
 
@@ -84,7 +88,10 @@ namespace HayBCMD {
 
     class Output {
     public:
-        static void printf(const std::string& format, const std::vector<Data>& args);
+        template<typename... Args>
+        static void printf(const std::string& format, Args ... args) {
+            print(formatString(format, args...));
+        }
 
         static void print(const std::string& str);
 
