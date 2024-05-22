@@ -121,7 +121,7 @@ namespace HayBCMD {
     }
 
     void Command::run(const std::vector<std::string>& args) {
-        (*commandCallFunc)(this, args);
+        commandCallFunc(this, args);
     }
 
     std::vector<Command> Command::commands;
@@ -130,12 +130,12 @@ namespace HayBCMD {
         variables = _variables;
 
         // Add commands
-        Command("help", 0, 1, (CommandCall)help, "<command?> - shows a list of commands usages or the usage of a specific command");
-        Command("echo", 1, 1, (CommandCall)echo, "<message> - echoes a message to the console");
-        Command("alias", 1, 2, (CommandCall)alias, "<var> <commands?> - creates/deletes variables");
-        Command("variables", 0, 0, (CommandCall)getVariables, "- list of variables");
-        Command("variable", 1, 1, (CommandCall)variable, "- shows variable value");
-        Command("incrementvar", 4, 4, (CommandCall)incrementvar, "<var> <minValue> <maxValue> <delta> - increments the value of a variable");
+        Command("help", 0, 1, help, "<command?> - shows a list of commands usages or the usage of a specific command");
+        Command("echo", 1, 1, echo, "<message> - echoes a message to the console");
+        Command("alias", 1, 2, alias, "<var> <commands?> - creates/deletes variables");
+        Command("variables", 0, 0, getVariables, "- list of variables");
+        Command("variable", 1, 1, variable, "- shows variable value");
+        Command("incrementvar", 4, 4, incrementvar, "<var> <minValue> <maxValue> <delta> - increments the value of a variable");
     }
 
     void BaseCommands::help(Command* _pCommand, const std::vector<std::string>& args) {

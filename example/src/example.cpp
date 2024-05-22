@@ -10,8 +10,7 @@ static void print(const std::string& string) {
 
 int main()
 {
-    HayBCMD::PrintFunction printFunc = &print;
-    HayBCMD::Output::setPrintFunction(printFunc);
+    HayBCMD::Output::setPrintFunction(print);
 
     std::unordered_map<std::string, std::string> variables{};
     HayBCMD::BaseCommands::init(&variables);
