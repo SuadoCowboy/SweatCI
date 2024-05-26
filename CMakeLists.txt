@@ -9,9 +9,8 @@ option(BUILD_SHARED "Whether build shared or static library." TRUE)
 add_library(objlib OBJECT HayBCMD.cpp)
 
 if(BUILD_SHARED)
-    # shared libraries need PIC
-    set_property(TARGET objlib PROPERTY POSITION_INDEPENDENT_CODE 1)
     add_library(HayBCMD SHARED $<TARGET_OBJECTS:objlib>)
+    set_target_properties(HayBCMD PROPERTIES VERSION ${PROJECT_VERSION} POSITION_INDEPENDENT_CODE 1)
 else()
     add_library(HayBCMD STATIC $<TARGET_OBJECTS:objlib>)
 endif()
