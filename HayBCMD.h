@@ -70,6 +70,7 @@ namespace HayBCMD {
 
     class Token {
     public:
+        Token(const HayBCMD::Token& other);
         Token();
         ~Token();
 
@@ -113,11 +114,11 @@ namespace HayBCMD {
     class Command {
     public:
         std::string name;
-        int minArgs;
-        int maxArgs;
+        unsigned char minArgs;
+        unsigned char maxArgs;
         std::string usage;
 
-        Command(const std::string& name, int minArgs, int maxArgs, CommandCall commandCallFunc, const std::string& usage);
+        Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage);
         static Command* getCommand(const std::string& name, bool printError);
         static const std::vector<Command>& getCommands();
         static void printUsage(const Command& command);

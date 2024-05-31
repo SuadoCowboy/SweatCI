@@ -37,6 +37,8 @@ namespace HayBCMD {
             return "_EOF";
         case EOS:
             return "EOS";
+        case NOTHING:
+            return "NOTHING";
         }
 
         return "UNKNOWN";
@@ -45,7 +47,9 @@ namespace HayBCMD {
     Token::Token() : type(NOTHING), value("") {}
     Token::~Token() {}
 
-    Token::Token(const TokenType& _type, const std::string& _value) : type(_type), value(_value) {}
+    Token::Token(const HayBCMD::Token& other) : type(other.type), value(other.value) {}
+
+    Token::Token(const TokenType& type, const std::string& value) : type(type), value(value) {}
 
     Token& Token::operator=(const Token& other) {
         type = other.type;
@@ -86,8 +90,8 @@ namespace HayBCMD {
         commands.push_back(*pCommand);
     }
 
-    Command::Command(const std::string& name, int minArgs, int maxArgs, CommandCall commandCallFunc, const std::string& usage)
-        : name(name), minArgs(minArgs), maxArgs(maxArgs), commandCallFunc(commandCallFunc), usage(usage) {
+    Command::Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage)
+        : name(name), minArgs(minArgs), maxArgs(maxArgs), usage(usage), commandCallFunc(commandCallFunc) {
         addCommand(this);
     }
 
@@ -138,7 +142,7 @@ namespace HayBCMD {
         Command("incrementvar", 4, 4, incrementvar, "<var> <minValue> <maxValue> <delta> - increments the value of a variable");
     }
 
-    void BaseCommands::help(Command* _pCommand, const std::vector<std::string>& args) {
+    void BaseCommands::help(Command*, const std::vector<std::string>& args) {
         if (args.size() == 1) {
             // Print usage for a specific command
             Command* command = Command::getCommand(args[0], true);
@@ -153,7 +157,7 @@ namespace HayBCMD {
         }
     }
 
-    void BaseCommands::echo(Command* _pCommand, const std::vector<std::string>& args) {
+    void BaseCommands::echo(Command*, const std::vector<std::string>& args) {
         std::string message;
         for (const auto& arg : args) {
             message += arg;
@@ -161,7 +165,7 @@ namespace HayBCMD {
         Output::print(message + '\n');
     }
 
-    void BaseCommands::alias(Command* _pCommand, const std::vector<std::string>& args) {
+    void BaseCommands::alias(Command*, const std::vector<std::string>& args) {
         if (args.size() == 1) {
             variables->erase(args[0]);
             return;
@@ -181,26 +185,17 @@ namespace HayBCMD {
         (*variables)[args[0]] = args[1];
     }
 
-    void BaseCommands::getVariables(Command* _pCommand, const std::vector<std::string>& args) {
-        std::string output;
-        int count = 0;
-
-        for (const auto& pair : *variables) {
-            output += pair.first + " = \"" + pair.second + "\"\n";
-            count++;
-        }
-
+    void BaseCommands::getVariables(Command*, const std::vector<std::string>&) {
         std::stringstream out;
-        out << "amount of variables: " << count << '\n';
-        if (!output.empty()) {
-            output.pop_back(); // Remove trailing newline
-            out << output << '\n';
-        }
 
-        Output::print(out.str());
+        out << "amount of variables: " << variables->size();
+        for (const auto& pair : *variables)
+            out << "\n" << pair.first << " = \"" << pair.second << "\"";
+
+        Output::print(out.str()+'\n');
     }
 
-    void BaseCommands::variable(Command* _pCommand, const std::vector<std::string>& args) {
+    void BaseCommands::variable(Command*, const std::vector<std::string>& args) {
         const std::string& key = args[0];
         auto it = variables->find(key);
         if (it == variables->end()) {
@@ -211,7 +206,7 @@ namespace HayBCMD {
         Output::print(key + " = \"" + it->second + "\"\n");
     }
 
-    void BaseCommands::incrementvar(Command* _pCommand, const std::vector<std::string>& args) {
+    void BaseCommands::incrementvar(Command*, const std::vector<std::string>& args) {
         const std::string& variable = args[0];
         double minValue, maxValue, delta;
 
@@ -257,11 +252,11 @@ namespace HayBCMD {
 
     std::unordered_map<std::string, std::string>* BaseCommands::variables;
 
-    Lexer::Lexer(const std::string& _input) : position(0), input(_input) {}
+    Lexer::Lexer(const std::string& input) : input(input), position(0) {}
 
     Token Lexer::nextToken() {
         if (position >= input.length()) {
-            lastToken = Token(TokenType::_EOF, "");
+            lastToken = {TokenType::_EOF, ""};
             return lastToken;
         }
 
@@ -598,7 +593,7 @@ namespace HayBCMD {
         }
 
         // checks if arguments size is within the allowed
-        if (arguments.size() > command->maxArgs || arguments.size() < command->minArgs) {
+        if (arguments.size() > (size_t)command->maxArgs || arguments.size() < (size_t)command->minArgs) {
             Command::printUsage(*command);
             if (!arguments.empty())
                 Output::print("arguments size must be within range [" + std::to_string(command->minArgs) + "," + std::to_string(command->maxArgs) + "], but size is " + std::to_string(arguments.size()) + '\n');
