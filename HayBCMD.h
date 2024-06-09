@@ -86,21 +86,29 @@ namespace HayBCMD {
         std::string value;
     };
 
-    typedef std::function<void(const std::string& message)> PrintFunction;
+
+    enum OutputLevel {
+        DEFAULT = 0, // text that is not involved by user interaction
+        ECHO, // any text that came from a command that is not an error
+        WARNING,
+        ERROR, // anything that went wrong
+    };
+
+    typedef std::function<void(const OutputLevel& level, const std::string& message)> PrintFunction;
 
     class Output {
     public:
         template<typename... Args>
-        static void printf(const std::string& format, Args ... args) {
-            print(formatString(format, args...));
+        static void printf(const OutputLevel& level, const std::string& format, Args ... args) {
+            print(level, formatString(format, args...));
         }
 
-        static void print(const std::string& str);
+        static void print(const OutputLevel& level, const std::string& str);
 
         static void setPrintFunction(PrintFunction printFunc);
 
         static void printUnknownCommand(std::string command) {
-            print("unknown command \"" + command + "\"\n");
+            print(OutputLevel::ERROR, "unknown command \"" + command + "\"\n");
         }
 
     private:

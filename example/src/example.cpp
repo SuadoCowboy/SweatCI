@@ -4,8 +4,26 @@
 #include "HayBCMD.h"
 #include <vector>
 
-static void print(const std::string& string) {
-    std::cout << string;
+static std::string outputLevelToString(const HayBCMD::OutputLevel &level) {
+    switch (level) {
+    case HayBCMD::OutputLevel::DEFAULT:
+        return "DEFAULT";
+    
+    case HayBCMD::OutputLevel::ECHO:
+        return "ECHO";
+    
+    case HayBCMD::OutputLevel::WARNING:
+        return "WARNING";
+    
+    case HayBCMD::OutputLevel::ERROR:
+        return "ERROR";
+    };
+
+    return "UNKNOWN";
+}
+
+static void print(HayBCMD::OutputLevel level, const std::string &string) {
+    std::cout << outputLevelToString(level) << ": " << string;
 }
 
 int main()
@@ -23,15 +41,15 @@ int main()
         "This is a {} text that accepts {}+ types\nHere are some examples:\nbool: {}/{}\ndouble {}\nfloat {}F\nlong long {}LL\n",
         "formatted", 5, true, false, (double)1.23456789, 3.1415f, LONG_LONG_MAX);
     
-    HayBCMD::Output::print(text);
-    HayBCMD::Output::printf(
+    HayBCMD::Output::print(HayBCMD::OutputLevel::DEFAULT, text);
+    HayBCMD::Output::printf(HayBCMD::OutputLevel::DEFAULT,
         "This is a text being printed form printf method that is just a normal print with formatString with it.\n{} {} {} {} {}",
         1, 3.2f, 4.5, true, "ez banana\n");
 
     {
         std::string input = "alias example \"echo \\\"Auto Respawn: \\\\\\\"$cl_auto_respawn\\\\\\\"\\\"; echo \\\"Respawn Message: \\\\\\\"$cl_respawn_message\\\\\\\"\\\"; echo \\\"Respawn Cooldown: \\\\\\\"$cl_respawn_cooldown\\\\\\\"\\\"\"; example";
         
-        HayBCMD::Output::print(input+'\n');
+        HayBCMD::Output::print(HayBCMD::OutputLevel::DEFAULT, input+'\n');
         
         HayBCMD::Lexer* lexer = new HayBCMD::Lexer(input);
         HayBCMD::Parser(lexer, variables).parse();

@@ -74,8 +74,8 @@ namespace HayBCMD {
         printFunc = _printFunc;
     }
 
-    void Output::print(const std::string& str) {
-        printFunc(str);
+    void Output::print(const OutputLevel& level, const std::string& str) {
+        printFunc(level, str);
     }
 
     PrintFunction Output::printFunc;
@@ -83,7 +83,7 @@ namespace HayBCMD {
     void Command::addCommand(Command* pCommand) {
         for (const auto& c : commands) {
             if (c.name == pCommand->name) {
-                Output::printf("ERROR: Command with name \"{s}\" already exists\n", pCommand->name);
+                Output::printf(OutputLevel::ERROR, "Command with name \"{s}\" already exists\n", pCommand->name);
                 return;
             }
         }
@@ -100,7 +100,7 @@ namespace HayBCMD {
             if (command.name == name) return &command;
 
         if (printError)
-            Output::print("unknown command \"" + name + "\"\n");
+            Output::print(OutputLevel::ERROR, "unknown command \"" + name + "\"\n");
 
         return nullptr;
     }
@@ -121,7 +121,7 @@ namespace HayBCMD {
     }
 
     void Command::printUsage(const Command& command) {
-        Output::print(command.name + ' ' + command.usage + '\n');
+        Output::print(OutputLevel::WARNING, command.name + ' ' + command.usage + '\n');
     }
 
     void Command::run(const std::vector<std::string>& args) {
@@ -162,7 +162,7 @@ namespace HayBCMD {
         for (const auto& arg : args) {
             message += arg;
         }
-        Output::print(message + '\n');
+        Output::print(OutputLevel::ECHO, message + '\n');
     }
 
     void BaseCommands::alias(Command*, const std::vector<std::string>& args) {
@@ -172,13 +172,13 @@ namespace HayBCMD {
         }
 
         if (Command::getCommand(args[0], false)) {
-            Output::print("varName is a command name, therefore this variable can not be created\n");
+            Output::print(OutputLevel::ERROR, "varName is a command name, therefore this variable can not be created\n");
             return;
         }
 
         std::regex whitespace_regex("\\S+");
         if (!std::regex_match(args[0], whitespace_regex)) {
-            Output::print("variable name can not have whitespace.\n");
+            Output::print(OutputLevel::ERROR, "variable name can not have whitespace.\n");
             return;
         }
 
@@ -192,18 +192,18 @@ namespace HayBCMD {
         for (const auto& pair : *variables)
             out << "\n" << pair.first << " = \"" << pair.second << "\"";
 
-        Output::print(out.str()+'\n');
+        Output::print(OutputLevel::ECHO, out.str()+'\n');
     }
 
     void BaseCommands::variable(Command*, const std::vector<std::string>& args) {
         const std::string& key = args[0];
         auto it = variables->find(key);
         if (it == variables->end()) {
-            Output::print("variable \"" + key + "\" does not exist\n");
+            Output::print(OutputLevel::ERROR, "variable \"" + key + "\" does not exist\n");
             return;
         }
 
-        Output::print(key + " = \"" + it->second + "\"\n");
+        Output::print(OutputLevel::ECHO, key + " = \"" + it->second + "\"\n");
     }
 
     void BaseCommands::incrementvar(Command*, const std::vector<std::string>& args) {
@@ -216,18 +216,18 @@ namespace HayBCMD {
             delta = std::stod(args[3]);
         }
         catch (...) {
-            Output::print("one of the variables is not a number");
+            Output::print(OutputLevel::ERROR, "one of the variables is not a number");
             return;
         }
 
         if (minValue > maxValue) {
-            Output::print("minValue is higher than maxValue");
+            Output::print(OutputLevel::ERROR, "minValue is higher than maxValue");
             return;
         }
 
         auto it = variables->find(variable);
         if (it == variables->end()) {
-            Output::print("unknown variable \"" + variable + "\"\n");
+            Output::print(OutputLevel::ERROR, "unknown variable \"" + variable + "\"\n");
             return;
         }
 
@@ -236,7 +236,7 @@ namespace HayBCMD {
             variableValue = std::stod(it->second);
         }
         catch (...) {
-            Output::print("variable value \"" + it->second + "\" is not a number");
+            Output::print(OutputLevel::ERROR, "variable value \"" + it->second + "\" is not a number");
             return;
         }
 
@@ -362,7 +362,7 @@ namespace HayBCMD {
 
     void CVARStorage::setCvar(const std::string& name, bool value) {
         if (boolCvars.count(name) == 0) {
-            Output::printf("ERROR: tried to change value of non-existent boolean CVAR \"{}\"", name);
+            Output::printf(OutputLevel::ERROR, "tried to change value of non-existent boolean CVAR \"{}\"", name);
             return;
         }
 
@@ -371,7 +371,7 @@ namespace HayBCMD {
 
     void CVARStorage::setCvar(const std::string& name, double value) {
         if (doubleCvars.count(name) == 0) {
-            Output::printf("ERROR: tried to change value of non-existent float CVAR \"{}\"", name);
+            Output::printf(OutputLevel::ERROR, "tried to change value of non-existent float CVAR \"{}\"", name);
             return;
         }
 
@@ -380,7 +380,7 @@ namespace HayBCMD {
 
     void CVARStorage::setCvar(const std::string& name, const std::string& value) {
         if (stringCvars.count(name) == 0) {
-            Output::printf("ERROR: tried to change value of non-existent string CVAR \"{}\"", name);
+            Output::printf(OutputLevel::ERROR, "tried to change value of non-existent string CVAR \"{}\"", name);
             return;
         }
 
@@ -389,7 +389,7 @@ namespace HayBCMD {
 
     void CVARStorage::setCvar(const std::string& name, const char* value) {
         if (stringCvars.count(name) == 0) {
-            Output::printf("ERROR: tried to change value of non-existent string CVAR \"{}\"", name);
+            Output::printf(OutputLevel::ERROR, "tried to change value of non-existent string CVAR \"{}\"", name);
             return;
         }
 
@@ -428,17 +428,17 @@ namespace HayBCMD {
             if (type == 'b') {
                 bool buf;
                 getCvar(pCommand->name, buf);
-                Output::printf("{}\n", buf);
+                Output::printf(OutputLevel::ECHO, "{}\n", buf);
             
             } else if (type == 'd') {
                 double buf;
                 getCvar(pCommand->name, buf);
-                Output::printf("{}\n", buf);
+                Output::printf(OutputLevel::ECHO, "{}\n", buf);
             
             } else if (type == 's') {
                 std::string buf;
                 getCvar(pCommand->name, buf);
-                Output::printf("{}\n", buf);
+                Output::printf(OutputLevel::ECHO, "{}\n", buf);
             }
             return;
         }
@@ -596,7 +596,7 @@ namespace HayBCMD {
         if (arguments.size() > (size_t)command->maxArgs || arguments.size() < (size_t)command->minArgs) {
             Command::printUsage(*command);
             if (!arguments.empty())
-                Output::print("arguments size must be within range [" + std::to_string(command->minArgs) + "," + std::to_string(command->maxArgs) + "], but size is " + std::to_string(arguments.size()) + '\n');
+                Output::print(OutputLevel::ECHO, "arguments size must be within range [" + std::to_string(command->minArgs) + "," + std::to_string(command->maxArgs) + "], but size is " + std::to_string(arguments.size()) + '\n');
             return;
         }
 
