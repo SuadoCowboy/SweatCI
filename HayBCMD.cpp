@@ -353,13 +353,6 @@ namespace HayBCMD {
                 formatString("(string) - {}", usage));
     }
 
-    void CVARStorage::cvar(const std::string& name, const char* value, const std::string& usage) {
-        stringCvars[name] = {value};
-
-        Command(name, 0, 1, (CommandCall)asCommand,
-                formatString("(string) - {}", usage));
-    }
-
     void CVARStorage::setCvar(const std::string& name, bool value) {
         if (boolCvars.count(name) == 0) {
             Output::printf(OutputLevel::ERROR, "tried to change value of non-existent boolean CVAR \"{}\"", name);
@@ -385,15 +378,6 @@ namespace HayBCMD {
         }
 
         stringCvars[name] = value;
-    }
-
-    void CVARStorage::setCvar(const std::string& name, const char* value) {
-        if (stringCvars.count(name) == 0) {
-            Output::printf(OutputLevel::ERROR, "tried to change value of non-existent string CVAR \"{}\"", name);
-            return;
-        }
-
-        stringCvars[name] = {value};
     }
 
     // Searches for the CVAR and returns it to a buffer

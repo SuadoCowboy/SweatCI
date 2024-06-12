@@ -177,12 +177,10 @@ namespace HayBCMD {
         static void cvar(const std::string& name, bool value, const std::string& usage);
         static void cvar(const std::string& name, double value, const std::string& usage);
         static void cvar(const std::string& name, const std::string& value, const std::string& usage);
-        static void cvar(const std::string& name, const char* value, const std::string& usage);
 
         static void setCvar(const std::string& name, bool value);
         static void setCvar(const std::string& name, double value);
         static void setCvar(const std::string& name, const std::string& value);
-        static void setCvar(const std::string& name, const char* value);
 
         // Searches for the CVAR and returns it to a buffer
         // @return false if could not get cvar
