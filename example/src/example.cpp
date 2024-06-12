@@ -34,8 +34,8 @@ int main()
     HayBCMD::BaseCommands::init(&variables);
 
     HayBCMD::CVARStorage::cvar("cl_auto_respawn", true, "whether respawn automatically or not");
-    HayBCMD::CVARStorage::cvar("cl_respawn_message", "You died. Respawn?", "");
-    HayBCMD::CVARStorage::cvar("cl_respawn_cooldown", 69.420, "cooldown to respawn");
+    HayBCMD::CVARStorage::cvar("cl_respawn_message", std::string("You died. Respawn?"), "");
+    HayBCMD::CVARStorage::cvar("cl_respawn_cooldown", 69.420f, "cooldown to respawn");
     
     std::string text = HayBCMD::formatString(
         "This is a {} text that accepts {}+ types\nHere are some examples:\nbool: {}/{}\ndouble {}\nfloat {}F\nlong long {}LL\n",
