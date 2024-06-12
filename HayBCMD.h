@@ -175,25 +175,25 @@ namespace HayBCMD {
     class CVARStorage {
     public:
         static void cvar(const std::string& name, bool value, const std::string& usage);
-        static void cvar(const std::string& name, double value, const std::string& usage);
+        static void cvar(const std::string& name, float value, const std::string& usage);
         static void cvar(const std::string& name, const std::string& value, const std::string& usage);
 
         static void setCvar(const std::string& name, bool value);
-        static void setCvar(const std::string& name, double value);
+        static void setCvar(const std::string& name, float value);
         static void setCvar(const std::string& name, const std::string& value);
 
         // Searches for the CVAR and returns it to a buffer
         // @return false if could not get cvar
         static bool getCvar(const std::string& name, bool& buf);
         static bool getCvar(const std::string& name, std::string& buf);
-        static bool getCvar(const std::string& name, double& buf);
+        static bool getCvar(const std::string& name, float& buf);
         
         // @return n = not found; s = string; b = bool; f = float
         static char getCvarType(const std::string& name);
 
     private:
         static std::unordered_map<std::string, bool> boolCvars;
-        static std::unordered_map<std::string, double> doubleCvars;
+        static std::unordered_map<std::string, float> floatCvars;
         static std::unordered_map<std::string, std::string> stringCvars;
         
         static void asCommand(HayBCMD::Command *pCommand, const std::vector<std::string>& args);
