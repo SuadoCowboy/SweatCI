@@ -117,7 +117,7 @@ namespace HayBCMD {
 
     class Command;
 
-    typedef std::function<void(Command* pCommand, const std::vector<std::string>& args)> CommandCall;
+    typedef std::function<void(Command *pCommand, const std::vector<std::string>& args)> CommandCall;
 
     class Command {
     public:
@@ -127,7 +127,7 @@ namespace HayBCMD {
         std::string usage;
 
         Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage);
-        static Command* getCommand(const std::string& name, bool printError);
+        static Command *getCommand(const std::string& name, bool printError);
         static const std::vector<Command>& getCommands();
         static void printUsage(const Command& command);
         static bool deleteCommand(const std::string& commandName); // @return 1 if success
@@ -137,22 +137,22 @@ namespace HayBCMD {
         CommandCall commandCallFunc;
 
         static std::vector<Command> commands;
-        static void addCommand(Command* pCommand);
+        static void addCommand(Command *pCommand);
     };
 
     class BaseCommands {
     public:
-        static void init(std::unordered_map<std::string, std::string>* variables);
+        static void init(std::unordered_map<std::string, std::string> *variables);
 
     private:
-        static std::unordered_map<std::string, std::string>* variables;
+        static std::unordered_map<std::string, std::string> *variables;
 
-        static void help(Command* _pCommand, const std::vector<std::string>& args);
-        static void echo(Command* _pCommand, const std::vector<std::string>& args);
-        static void alias(Command* _pCommand, const std::vector<std::string>& args);
-        static void getVariables(Command* _pCommand, const std::vector<std::string>& args);
-        static void variable(Command* _pCommand, const std::vector<std::string>& args);
-        static void incrementvar(Command* _pCommand, const std::vector<std::string>& args);
+        static void help(Command *_pCommand, const std::vector<std::string>& args);
+        static void echo(Command *_pCommand, const std::vector<std::string>& args);
+        static void alias(Command *_pCommand, const std::vector<std::string>& args);
+        static void getVariables(Command *_pCommand, const std::vector<std::string>& args);
+        static void variable(Command *_pCommand, const std::vector<std::string>& args);
+        static void incrementvar(Command *_pCommand, const std::vector<std::string>& args);
     };
 
     class Lexer {
@@ -196,12 +196,12 @@ namespace HayBCMD {
         static std::unordered_map<std::string, double> doubleCvars;
         static std::unordered_map<std::string, std::string> stringCvars;
         
-        static void asCommand(HayBCMD::Command* pCommand, const std::vector<std::string>& args);
+        static void asCommand(HayBCMD::Command *pCommand, const std::vector<std::string>& args);
     };
 
     class Parser {
     public:
-        Parser(Lexer* lexer, std::unordered_map<std::string, std::string>& variables);
+        Parser(Lexer *lexer, std::unordered_map<std::string, std::string>& variables);
         void parse();
 
         static unsigned int aliasMaxCalls;
@@ -214,7 +214,7 @@ namespace HayBCMD {
         void handleAliasLexer(const std::string& input);
 
         Token currentToken;
-        Lexer* lexer;
+        Lexer *lexer;
         std::unordered_map<std::string, std::string>& variables;
         std::string getVariableFromCurrentTokenValue();
     };

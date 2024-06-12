@@ -80,7 +80,7 @@ namespace HayBCMD {
 
     PrintFunction Output::printFunc;
 
-    void Command::addCommand(Command* pCommand) {
+    void Command::addCommand(Command *pCommand) {
         for (const auto& c : commands) {
             if (c.name == pCommand->name) {
                 Output::printf(OutputLevel::ERROR, "Command with name \"{s}\" already exists\n", pCommand->name);
@@ -95,7 +95,7 @@ namespace HayBCMD {
         addCommand(this);
     }
 
-    Command* Command::getCommand(const std::string& name, bool printError) {
+    Command *Command::getCommand(const std::string& name, bool printError) {
         for (auto& command : commands)
             if (command.name == name) return &command;
 
@@ -130,7 +130,7 @@ namespace HayBCMD {
 
     std::vector<Command> Command::commands;
 
-    void BaseCommands::init(std::unordered_map<std::string, std::string>* _variables) {
+    void BaseCommands::init(std::unordered_map<std::string, std::string> *_variables) {
         variables = _variables;
 
         // Add commands
@@ -145,7 +145,7 @@ namespace HayBCMD {
     void BaseCommands::help(Command*, const std::vector<std::string>& args) {
         if (args.size() == 1) {
             // Print usage for a specific command
-            Command* command = Command::getCommand(args[0], true);
+            Command *command = Command::getCommand(args[0], true);
             if (command != nullptr)
                 Command::printUsage(*(Command*)command);
             return;
@@ -250,7 +250,7 @@ namespace HayBCMD {
         (*variables)[variable] = std::to_string(variableValue);
     }
 
-    std::unordered_map<std::string, std::string>* BaseCommands::variables;
+    std::unordered_map<std::string, std::string> *BaseCommands::variables;
 
     Lexer::Lexer(const std::string& input) : input(input), position(0) {}
 
@@ -404,7 +404,7 @@ namespace HayBCMD {
         return false;
     }
     
-    void CVARStorage::asCommand(Command* pCommand, const std::vector<std::string>& args) {
+    void CVARStorage::asCommand(Command *pCommand, const std::vector<std::string>& args) {
         char type = pCommand->usage.at(1); // usage = "(string/float/boolean) [...]"; this gets the first char after '('
         
         // if should print to output
@@ -465,7 +465,7 @@ namespace HayBCMD {
     std::unordered_map<std::string, double> CVARStorage::doubleCvars;
     std::unordered_map<std::string, std::string> CVARStorage::stringCvars;
 
-    Parser::Parser(Lexer* lexer, std::unordered_map<std::string, std::string>& variables) : lexer(lexer), variables(variables) {
+    Parser::Parser(Lexer *lexer, std::unordered_map<std::string, std::string>& variables) : lexer(lexer), variables(variables) {
         advance();
     }
 
@@ -557,7 +557,7 @@ namespace HayBCMD {
     void Parser::handleCommandToken() {
         std::string commandString = currentToken.getValue();
 
-        Command* command = Command::getCommand(commandString, true);
+        Command *command = Command::getCommand(commandString, true);
         if (command == nullptr)
             return;
 

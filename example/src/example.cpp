@@ -51,7 +51,7 @@ int main()
         
         HayBCMD::Output::print(HayBCMD::OutputLevel::DEFAULT, input+'\n');
         
-        HayBCMD::Lexer* lexer = new HayBCMD::Lexer(input);
+        HayBCMD::Lexer *lexer = new HayBCMD::Lexer(input);
         HayBCMD::Parser(lexer, variables).parse();
 
         delete lexer;
@@ -66,11 +66,8 @@ int main()
         if (input == "quit")
             break;
 
-        HayBCMD::Lexer* lexer = new HayBCMD::Lexer(input);
-        HayBCMD::Parser(lexer, variables).parse();
-
-        delete lexer;
-        lexer = nullptr;
+        HayBCMD::Lexer lexer = input;
+        HayBCMD::Parser(&lexer, variables).parse();
     }
     
     return 0;
