@@ -472,7 +472,8 @@ namespace HayBCMD {
     std::unordered_map<std::string, float> CVARStorage::floatCvars;
     std::unordered_map<std::string, std::string> CVARStorage::stringCvars;
 
-    std::vector<std::string> loopAliasesRunning = {};
+    std::set<std::string> loopAliasesRunning = {};
+    std::set<std::string> toggleAliasesRunning = {};
 
     void handleLoopAliasesRunning(std::unordered_map<std::string, std::string> &variables) {
         for (auto& loopAlias : loopAliasesRunning) {
@@ -613,7 +614,7 @@ namespace HayBCMD {
         while (currentToken.getType() != TokenType::_EOF) {
             std::string variable = getVariableFromCurrentTokenValue();
 
-            if (variable != "") {
+            if (!variable.empty()) {
                 tempLexers.push_back(lexer);
 
                 lexer = new Lexer(variable);
@@ -659,17 +660,31 @@ namespace HayBCMD {
 
             if (!variableValue.empty()) {
                 std::string varName = currentToken.getValue();
-                if (varName.front() == '!') {
-                    bool stopped = false;
-                    for (size_t i = 0; i < loopAliasesRunning.size(); ++i) {
-                        if (loopAliasesRunning[i] == varName) {
-                            loopAliasesRunning.erase(loopAliasesRunning.begin()+i);
-                            stopped = true;
-                        }
+                char front = varName.front();
+                
+                if (front == '!') {
+                    auto it = std::find(loopAliasesRunning.begin(), loopAliasesRunning.end(), varName);
+                    // if is already running, stop
+                    if (it != loopAliasesRunning.end())
+                        loopAliasesRunning.erase(it);
+                    else // if not, make it run
+                        loopAliasesRunning.emplace(varName);
+
+                } else if (front == '+') { // if it is not running, start
+                    auto it = std::find(toggleAliasesRunning.begin(), toggleAliasesRunning.end(), varName.substr(1));
+                    if (it == toggleAliasesRunning.end()) {
+                        toggleAliasesRunning.emplace(varName.substr(1));
+                        handleAliasLexer(variableValue);
                     }
 
-                    if (!stopped) // if not stopped it means it's not running = make it run then
-                        loopAliasesRunning.push_back(varName);
+                } else if (front == '-') { // else: the + version had already ran, so now it will turn off
+                    auto it = std::find(toggleAliasesRunning.begin(), toggleAliasesRunning.end(), varName.substr(1));
+
+                    if (it != toggleAliasesRunning.end()) {
+                        toggleAliasesRunning.erase(it);
+                        handleAliasLexer(variableValue);
+                    }
+                
                 } else
                     handleAliasLexer(variableValue);
             }

@@ -28,6 +28,7 @@
 #include <unordered_map>
 #include <vector>
 #include <functional>
+#include <set>
 
 namespace HayBCMD {
     enum TokenType {
@@ -198,7 +199,9 @@ namespace HayBCMD {
         static void asCommand(HayBCMD::Command *pCommand, const std::vector<std::string> &args);
     };
 
-    extern std::vector<std::string> loopAliasesRunning;
+    extern std::set<std::string> loopAliasesRunning;
+    extern std::set<std::string> toggleAliasesRunning;
+    
     void handleLoopAliasesRunning(std::unordered_map<std::string, std::string> &variables);
 
     class Parser {
