@@ -710,6 +710,8 @@ namespace HayBCMD {
             if (!variableValue.empty()) {
                 if (handleSpecialAliases())
                     handleAliasLexer(variableValue);
+                
+                advanceUntil({ TokenType::EOS });
             }
 
             else if (currentToken.getType() == TokenType::COMMAND)
