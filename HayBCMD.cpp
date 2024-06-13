@@ -189,6 +189,11 @@ namespace HayBCMD {
             return;
         }
 
+        std::string negativeVarName = '-'+args[0].substr(1);
+        if (args[0].front() == '+' && variables->count(negativeVarName) == 0) {
+            (*variables)[negativeVarName] = " ";
+        }
+
         (*variables)[args[0]] = args[1];
     }
 
