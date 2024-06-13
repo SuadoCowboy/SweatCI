@@ -21,13 +21,14 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
 #include "HayBCMD.h"
 
 #include <regex>
 #include <algorithm>
 
 namespace HayBCMD {
-    std::string tokenTypeToString(const TokenType& type) {
+    std::string tokenTypeToString(const TokenType &type) {
         switch (type) {
         case STRING:
             return "STRING";
@@ -47,22 +48,22 @@ namespace HayBCMD {
     Token::Token() : type(NOTHING), value("") {}
     Token::~Token() {}
 
-    Token::Token(const HayBCMD::Token& other) : type(other.type), value(other.value) {}
+    Token::Token(const HayBCMD::Token &other) : type(other.type), value(other.value) {}
 
-    Token::Token(const TokenType& type, const std::string& value) : type(type), value(value) {}
+    Token::Token(const TokenType &type, const std::string &value) : type(type), value(value) {}
 
-    Token& Token::operator=(const Token& other) {
+    Token &Token::operator=(const Token &other) {
         type = other.type;
         value = other.value;
 
         return *this;
     }
 
-    const TokenType& Token::getType() const {
+    const TokenType &Token::getType() const {
         return type;
     }
 
-    const std::string& Token::getValue() {
+    const std::string &Token::getValue() {
         return value;
     }
 
@@ -74,14 +75,14 @@ namespace HayBCMD {
         printFunc = _printFunc;
     }
 
-    void Output::print(const OutputLevel& level, const std::string& str) {
+    void Output::print(const OutputLevel &level, const std::string &str) {
         printFunc(level, str);
     }
 
     PrintFunction Output::printFunc;
 
     void Command::addCommand(Command *pCommand) {
-        for (const auto& c : commands) {
+        for (const auto &c : commands) {
             if (c.name == pCommand->name) {
                 Output::printf(OutputLevel::ERROR, "Command with name \"{s}\" already exists\n", pCommand->name);
                 return;
@@ -90,13 +91,13 @@ namespace HayBCMD {
         commands.push_back(*pCommand);
     }
 
-    Command::Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage)
+    Command::Command(const std::string &name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string &usage)
         : name(name), minArgs(minArgs), maxArgs(maxArgs), usage(usage), commandCallFunc(commandCallFunc) {
         addCommand(this);
     }
 
-    Command *Command::getCommand(const std::string& name, bool printError) {
-        for (auto& command : commands)
+    Command *Command::getCommand(const std::string &name, bool printError) {
+        for (auto &command : commands)
             if (command.name == name) return &command;
 
         if (printError)
@@ -105,7 +106,7 @@ namespace HayBCMD {
         return nullptr;
     }
 
-    bool Command::deleteCommand(const std::string& commandName) {
+    bool Command::deleteCommand(const std::string &commandName) {
         for (size_t i = 0; i < commands.size(); ++i) {
             if (commands[i].name == commandName) {
                 commands.erase(commands.begin() + i);
@@ -116,15 +117,15 @@ namespace HayBCMD {
         return false;
     }
 
-    const std::vector<Command>& Command::getCommands() {
+    const std::vector<Command> &Command::getCommands() {
         return commands;
     }
 
-    void Command::printUsage(const Command& command) {
+    void Command::printUsage(const Command &command) {
         Output::print(OutputLevel::WARNING, command.name + ' ' + command.usage + '\n');
     }
 
-    void Command::run(const std::vector<std::string>& args) {
+    void Command::run(const std::vector<std::string> &args) {
         commandCallFunc(this, args);
     }
 
@@ -142,7 +143,7 @@ namespace HayBCMD {
         Command("incrementvar", 4, 4, incrementvar, "<var> <minValue> <maxValue> <delta> - increments the value of a variable");
     }
 
-    void BaseCommands::help(Command*, const std::vector<std::string>& args) {
+    void BaseCommands::help(Command*, const std::vector<std::string> &args) {
         if (args.size() == 1) {
             // Print usage for a specific command
             Command *command = Command::getCommand(args[0], true);
@@ -152,22 +153,28 @@ namespace HayBCMD {
         }
 
         // Print usage for all commands
-        for (const auto& command : Command::getCommands()) {
+        for (const auto &command : Command::getCommands()) {
             Command::printUsage(command);
         }
     }
 
-    void BaseCommands::echo(Command*, const std::vector<std::string>& args) {
+    void BaseCommands::echo(Command*, const std::vector<std::string> &args) {
         std::string message;
-        for (const auto& arg : args) {
+        for (const auto &arg : args) {
             message += arg;
         }
         Output::print(OutputLevel::ECHO, message + '\n');
     }
 
-    void BaseCommands::alias(Command*, const std::vector<std::string>& args) {
-        if (args.size() == 1) {
+    void BaseCommands::alias(Command*, const std::vector<std::string> &args) {
+        if (args.size() == 1 && variables->count(args[0]) != 0) {
             variables->erase(args[0]);
+            if (args[0].front() == '!') {
+                auto it = std::find(loopAliasesRunning.begin(), loopAliasesRunning.end(), args[0]);
+                if (it != loopAliasesRunning.end())
+                    loopAliasesRunning.erase(it);
+            }
+
             return;
         }
 
@@ -189,14 +196,14 @@ namespace HayBCMD {
         std::stringstream out;
 
         out << "amount of variables: " << variables->size();
-        for (const auto& pair : *variables)
+        for (const auto &pair : *variables)
             out << "\n" << pair.first << " = \"" << pair.second << "\"";
 
         Output::print(OutputLevel::ECHO, out.str()+'\n');
     }
 
-    void BaseCommands::variable(Command*, const std::vector<std::string>& args) {
-        const std::string& key = args[0];
+    void BaseCommands::variable(Command*, const std::vector<std::string> &args) {
+        const std::string &key = args[0];
         auto it = variables->find(key);
         if (it == variables->end()) {
             Output::print(OutputLevel::ERROR, "variable \"" + key + "\" does not exist\n");
@@ -206,8 +213,8 @@ namespace HayBCMD {
         Output::print(OutputLevel::ECHO, key + " = \"" + it->second + "\"\n");
     }
 
-    void BaseCommands::incrementvar(Command*, const std::vector<std::string>& args) {
-        const std::string& variable = args[0];
+    void BaseCommands::incrementvar(Command*, const std::vector<std::string> &args) {
+        const std::string &variable = args[0];
         double minValue, maxValue, delta;
 
         try {
@@ -252,7 +259,7 @@ namespace HayBCMD {
 
     std::unordered_map<std::string, std::string> *BaseCommands::variables;
 
-    Lexer::Lexer(const std::string& input) : input(input), position(0) {}
+    Lexer::Lexer(const std::string &input) : input(input), position(0) {}
 
     Token Lexer::nextToken() {
         if (position >= input.length()) {
@@ -282,8 +289,8 @@ namespace HayBCMD {
         return lastToken;
     }
 
-    bool Lexer::isCommand(const std::string& commandName) {
-        for (const auto& command : Command::getCommands()) {
+    bool Lexer::isCommand(const std::string &commandName) {
+        for (const auto &command : Command::getCommands()) {
 
             if (command.name == commandName)
                 return true;
@@ -332,28 +339,28 @@ namespace HayBCMD {
         return Token(TokenType::STRING, tokenValue);
     }
 
-    void CVARStorage::cvar(const std::string& name, bool value, const std::string& usage) {
+    void CVARStorage::cvar(const std::string &name, bool value, const std::string &usage) {
             boolCvars[name] = value;
 
             Command(name, 0, 1, (CommandCall)asCommand,
                     formatString("(boolean) - {}", usage));
         }
         
-    void CVARStorage::cvar(const std::string& name, float value, const std::string& usage) {
+    void CVARStorage::cvar(const std::string &name, float value, const std::string &usage) {
         floatCvars[name] = value;
 
         Command(name, 0, 1, (CommandCall)asCommand,
                 formatString("(float) - {}", usage));
     }
     
-    void CVARStorage::cvar(const std::string& name, const std::string& value, const std::string& usage) {
+    void CVARStorage::cvar(const std::string &name, const std::string &value, const std::string &usage) {
         stringCvars[name] = value;
 
         Command(name, 0, 1, (CommandCall)asCommand,
                 formatString("(string) - {}", usage));
     }
 
-    void CVARStorage::setCvar(const std::string& name, bool value) {
+    void CVARStorage::setCvar(const std::string &name, bool value) {
         if (boolCvars.count(name) == 0) {
             Output::printf(OutputLevel::ERROR, "tried to change value of non-existent boolean CVAR \"{}\"", name);
             return;
@@ -362,7 +369,7 @@ namespace HayBCMD {
         boolCvars[name] = value;
     }
 
-    void CVARStorage::setCvar(const std::string& name, float value) {
+    void CVARStorage::setCvar(const std::string &name, float value) {
         if (floatCvars.count(name) == 0) {
             Output::printf(OutputLevel::ERROR, "tried to change value of non-existent float CVAR \"{}\"", name);
             return;
@@ -371,7 +378,7 @@ namespace HayBCMD {
         floatCvars[name] = value;
     }
 
-    void CVARStorage::setCvar(const std::string& name, const std::string& value) {
+    void CVARStorage::setCvar(const std::string &name, const std::string &value) {
         if (stringCvars.count(name) == 0) {
             Output::printf(OutputLevel::ERROR, "tried to change value of non-existent string CVAR \"{}\"", name);
             return;
@@ -382,7 +389,7 @@ namespace HayBCMD {
 
     // Searches for the CVAR and returns it to a buffer
     // @return false if could not get cvar
-    bool CVARStorage::getCvar(const std::string& name, bool& buf) {
+    bool CVARStorage::getCvar(const std::string &name, bool &buf) {
         for (auto cvar : boolCvars)
             if (cvar.first == name) {buf = cvar.second; return true;}
         return false;
@@ -390,7 +397,7 @@ namespace HayBCMD {
 
     // Searches for the CVAR and returns it to a buffer
     // @return false if could not get cvar
-    bool CVARStorage::getCvar(const std::string& name, std::string& buf) {
+    bool CVARStorage::getCvar(const std::string &name, std::string &buf) {
         for (auto cvar : stringCvars)
             if (cvar.first == name) {buf = cvar.second; return true;}
         return false;
@@ -398,13 +405,13 @@ namespace HayBCMD {
 
     // Searches for the CVAR and returns it to a buffer
     // @return false if could not get cvar
-    bool CVARStorage::getCvar(const std::string& name, float& buf) {
+    bool CVARStorage::getCvar(const std::string &name, float &buf) {
         for (auto cvar : floatCvars)
             if (cvar.first == name) {buf = cvar.second; return true;}
         return false;
     }
     
-    void CVARStorage::asCommand(Command *pCommand, const std::vector<std::string>& args) {
+    void CVARStorage::asCommand(Command *pCommand, const std::vector<std::string> &args) {
         char type = pCommand->usage.at(1); // usage = "(string/float/boolean) [...]"; this gets the first char after '('
         
         // if should print to output
@@ -450,7 +457,7 @@ namespace HayBCMD {
             }
     }
 
-    char CVARStorage::getCvarType(const std::string& name) {
+    char CVARStorage::getCvarType(const std::string &name) {
         bool bBuf;
         std::string sBuf;
         float fBuf;
@@ -465,7 +472,16 @@ namespace HayBCMD {
     std::unordered_map<std::string, float> CVARStorage::floatCvars;
     std::unordered_map<std::string, std::string> CVARStorage::stringCvars;
 
-    Parser::Parser(Lexer *lexer, std::unordered_map<std::string, std::string>& variables) : lexer(lexer), variables(variables) {
+    std::vector<std::string> loopAliasesRunning = {};
+
+    void handleLoopAliasesRunning(std::unordered_map<std::string, std::string> &variables) {
+        for (auto& loopAlias : loopAliasesRunning) {
+            Lexer lexer{variables[loopAlias]};
+            Parser(&lexer, variables).parse();
+        }
+    }
+
+    Parser::Parser(Lexer *lexer, std::unordered_map<std::string, std::string> &variables) : lexer(lexer), variables(variables) {
         advance();
     }
 
@@ -473,7 +489,7 @@ namespace HayBCMD {
         currentToken = lexer->nextToken();
     }
 
-    void Parser::advanceUntil(const std::vector<TokenType>& tokenTypes) {
+    void Parser::advanceUntil(const std::vector<TokenType> &tokenTypes) {
         advance(); // always skip the first one
 
         // checks if EOF is reached because if not, it would run forever
@@ -568,7 +584,7 @@ namespace HayBCMD {
         // make it include whitespaces in that case
         if (command->maxArgs == 1 && !arguments.empty()) {
             std::string stringBuilder;
-            for (const auto& argument : arguments) {
+            for (const auto &argument : arguments) {
                 stringBuilder += argument + " ";
             }
             stringBuilder.pop_back(); // remove last space
@@ -587,7 +603,7 @@ namespace HayBCMD {
         command->run(arguments);
     }
 
-    void Parser::handleAliasLexer(const std::string& input) {
+    void Parser::handleAliasLexer(const std::string &input) {
         std::vector<Lexer*> tempLexers;
         tempLexers.push_back(lexer);
 
@@ -641,8 +657,22 @@ namespace HayBCMD {
         while (currentToken.getType() != TokenType::_EOF) {
             std::string variableValue = getVariableFromCurrentTokenValue();
 
-            if (!variableValue.empty())
-                handleAliasLexer(variableValue);
+            if (!variableValue.empty()) {
+                std::string varName = currentToken.getValue();
+                if (varName.front() == '!') {
+                    bool stopped = false;
+                    for (size_t i = 0; i < loopAliasesRunning.size(); ++i) {
+                        if (loopAliasesRunning[i] == varName) {
+                            loopAliasesRunning.erase(loopAliasesRunning.begin()+i);
+                            stopped = true;
+                        }
+                    }
+
+                    if (!stopped) // if not stopped it means it's not running = make it run then
+                        loopAliasesRunning.push_back(varName);
+                } else
+                    handleAliasLexer(variableValue);
+            }
 
             else if (currentToken.getType() == TokenType::COMMAND)
                 handleCommandToken();
@@ -655,6 +685,4 @@ namespace HayBCMD {
             advance();
         }
     }
-
-    unsigned int Parser::aliasMaxCalls = 50000;
 }

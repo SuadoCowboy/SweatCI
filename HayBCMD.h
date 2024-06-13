@@ -40,13 +40,13 @@ namespace HayBCMD {
 
     /// @warning this function is not meant to be used outside this header
     template<typename ...>
-    static void _formatStringValue(const std::string& format, std::stringstream& buf) {
+    static void _formatStringValue(const std::string &format, std::stringstream &buf) {
         buf << format;
     }
 
     /// @warning this function is not meant to be used outside this header
     template<typename T, typename ... Args>
-    static void _formatStringValue(const std::string& format, std::stringstream& buf, T value, Args& ... args) {
+    static void _formatStringValue(const std::string &format, std::stringstream &buf, T value, Args &... args) {
         size_t idx = format.find("{}");
         if (idx == std::string::npos) {
             buf << format;
@@ -59,33 +59,32 @@ namespace HayBCMD {
     }
 
     template<typename ... Args>
-    std::string formatString(const std::string& format, Args ... args)
+    std::string formatString(const std::string &format, Args ... args)
     {
         std::stringstream buf;
         _formatStringValue(format, buf, args...);
         return buf.str();
     }
 
-    std::string tokenTypeToString(const TokenType& type);
+    std::string tokenTypeToString(const TokenType &type);
 
     class Token {
     public:
-        Token(const HayBCMD::Token& other);
+        Token(const HayBCMD::Token &other);
         Token();
         ~Token();
 
-        Token(const TokenType& type, const std::string& value);
-        const TokenType& getType() const;
-        const std::string& getValue();
+        Token(const TokenType &type, const std::string &value);
+        const TokenType &getType() const;
+        const std::string &getValue();
         std::string string() const;
 
-        Token& operator=(const Token& other);
+        Token &operator=(const Token &other);
 
     private:
         TokenType type;
         std::string value;
     };
-
 
     enum OutputLevel {
         DEFAULT = 0, // text that is not involved by user interaction
@@ -94,16 +93,16 @@ namespace HayBCMD {
         ERROR, // anything that went wrong
     };
 
-    typedef std::function<void(const OutputLevel& level, const std::string& message)> PrintFunction;
+    typedef std::function<void(const OutputLevel &level, const std::string &message)> PrintFunction;
 
     class Output {
     public:
         template<typename... Args>
-        static void printf(const OutputLevel& level, const std::string& format, Args ... args) {
+        static void printf(const OutputLevel &level, const std::string &format, Args ... args) {
             print(level, formatString(format, args...));
         }
 
-        static void print(const OutputLevel& level, const std::string& str);
+        static void print(const OutputLevel &level, const std::string &str);
 
         static void setPrintFunction(PrintFunction printFunc);
 
@@ -117,7 +116,7 @@ namespace HayBCMD {
 
     class Command;
 
-    typedef std::function<void(Command *pCommand, const std::vector<std::string>& args)> CommandCall;
+    typedef std::function<void(Command *pCommand, const std::vector<std::string> &args)> CommandCall;
 
     class Command {
     public:
@@ -126,12 +125,12 @@ namespace HayBCMD {
         unsigned char maxArgs;
         std::string usage;
 
-        Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage);
-        static Command *getCommand(const std::string& name, bool printError);
-        static const std::vector<Command>& getCommands();
-        static void printUsage(const Command& command);
-        static bool deleteCommand(const std::string& commandName); // @return 1 if success
-        void run(const std::vector<std::string>& args);
+        Command(const std::string &name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string &usage);
+        static Command *getCommand(const std::string &name, bool printError);
+        static const std::vector<Command> &getCommands();
+        static void printUsage(const Command &command);
+        static bool deleteCommand(const std::string &commandName); // @return 1 if success
+        void run(const std::vector<std::string> &args);
 
     private:
         CommandCall commandCallFunc;
@@ -147,23 +146,23 @@ namespace HayBCMD {
     private:
         static std::unordered_map<std::string, std::string> *variables;
 
-        static void help(Command *_pCommand, const std::vector<std::string>& args);
-        static void echo(Command *_pCommand, const std::vector<std::string>& args);
-        static void alias(Command *_pCommand, const std::vector<std::string>& args);
-        static void getVariables(Command *_pCommand, const std::vector<std::string>& args);
-        static void variable(Command *_pCommand, const std::vector<std::string>& args);
-        static void incrementvar(Command *_pCommand, const std::vector<std::string>& args);
+        static void help(Command *_pCommand, const std::vector<std::string> &args);
+        static void echo(Command *_pCommand, const std::vector<std::string> &args);
+        static void alias(Command *_pCommand, const std::vector<std::string> &args);
+        static void getVariables(Command *_pCommand, const std::vector<std::string> &args);
+        static void variable(Command *_pCommand, const std::vector<std::string> &args);
+        static void incrementvar(Command *_pCommand, const std::vector<std::string> &args);
     };
 
     class Lexer {
     public:
-        Lexer(const std::string& input);
+        Lexer(const std::string &input);
 
         Token nextToken();
 
     private:
-        bool isVariable(const std::string& identifier);
-        bool isCommand(const std::string& commandName);
+        bool isVariable(const std::string &identifier);
+        bool isCommand(const std::string &commandName);
         Token parseToken();
         Token parseString();
 
@@ -174,48 +173,51 @@ namespace HayBCMD {
 
     class CVARStorage {
     public:
-        static void cvar(const std::string& name, bool value, const std::string& usage);
-        static void cvar(const std::string& name, float value, const std::string& usage);
-        static void cvar(const std::string& name, const std::string& value, const std::string& usage);
+        static void cvar(const std::string &name, bool value, const std::string &usage);
+        static void cvar(const std::string &name, float value, const std::string &usage);
+        static void cvar(const std::string &name, const std::string &value, const std::string &usage);
 
-        static void setCvar(const std::string& name, bool value);
-        static void setCvar(const std::string& name, float value);
-        static void setCvar(const std::string& name, const std::string& value);
+        static void setCvar(const std::string &name, bool value);
+        static void setCvar(const std::string &name, float value);
+        static void setCvar(const std::string &name, const std::string &value);
 
         // Searches for the CVAR and returns it to a buffer
         // @return false if could not get cvar
-        static bool getCvar(const std::string& name, bool& buf);
-        static bool getCvar(const std::string& name, std::string& buf);
-        static bool getCvar(const std::string& name, float& buf);
+        static bool getCvar(const std::string &name, bool &buf);
+        static bool getCvar(const std::string &name, std::string &buf);
+        static bool getCvar(const std::string &name, float &buf);
         
         // @return n = not found; s = string; b = bool; f = float
-        static char getCvarType(const std::string& name);
+        static char getCvarType(const std::string &name);
 
     private:
         static std::unordered_map<std::string, bool> boolCvars;
         static std::unordered_map<std::string, float> floatCvars;
         static std::unordered_map<std::string, std::string> stringCvars;
         
-        static void asCommand(HayBCMD::Command *pCommand, const std::vector<std::string>& args);
+        static void asCommand(HayBCMD::Command *pCommand, const std::vector<std::string> &args);
     };
+
+    extern std::vector<std::string> loopAliasesRunning;
+    void handleLoopAliasesRunning(std::unordered_map<std::string, std::string> &variables);
 
     class Parser {
     public:
-        Parser(Lexer *lexer, std::unordered_map<std::string, std::string>& variables);
+        Parser(Lexer *lexer, std::unordered_map<std::string, std::string> &variables);
         void parse();
 
-        static unsigned int aliasMaxCalls;
+        unsigned short aliasMaxCalls = 50000;
 
     private:
         std::vector<std::string> getArguments();
         void advance();
-        void advanceUntil(const std::vector<TokenType>& tokenTypes);
+        void advanceUntil(const std::vector<TokenType> &tokenTypes);
         void handleCommandToken();
-        void handleAliasLexer(const std::string& input);
+        void handleAliasLexer(const std::string &input);
 
         Token currentToken;
-        Lexer *lexer;
-        std::unordered_map<std::string, std::string>& variables;
+        Lexer *lexer = nullptr;
+        std::unordered_map<std::string, std::string> &variables;
         std::string getVariableFromCurrentTokenValue();
     };
 }
