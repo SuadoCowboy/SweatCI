@@ -79,6 +79,10 @@ namespace HayBCMD {
         printFunc(level, str);
     }
 
+    void Output::printUnknownCommand(const std::string &command) {
+        print(OutputLevel::ERROR, "unknown command \"" + command + "\"\n");
+    }
+
     PrintFunction Output::printFunc;
 
     void Command::addCommand(Command *pCommand) {
@@ -101,7 +105,7 @@ namespace HayBCMD {
             if (command.name == name) return &command;
 
         if (printError)
-            Output::print(OutputLevel::ERROR, "unknown command \"" + name + "\"\n");
+            Output::printUnknownCommand(name);
 
         return nullptr;
     }
@@ -609,6 +613,45 @@ namespace HayBCMD {
         command->run(arguments);
     }
 
+    bool Parser::handleSpecialAliases() {
+        std::string varName = currentToken.getValue();
+        char front = varName.front();
+        
+        if (front == '!') {
+            auto it = std::find(loopAliasesRunning.begin(), loopAliasesRunning.end(), varName);
+            // if is already running, stop
+            if (it != loopAliasesRunning.end())
+                loopAliasesRunning.erase(it);
+            else // if not, make it run
+                loopAliasesRunning.push_back(varName);
+            
+            return false;
+        }
+        
+        if (front == '+') { // if it is not running, start
+            auto it = std::find(toggleAliasesRunning.begin(), toggleAliasesRunning.end(), varName.substr(1));
+            if (it == toggleAliasesRunning.end()) {
+                toggleAliasesRunning.push_back(varName.substr(1));
+                return true;
+            }
+
+            return false;
+        }
+        
+        if (front == '-') { // else: the + version had already ran, so now it will turn off
+            auto it = std::find(toggleAliasesRunning.begin(), toggleAliasesRunning.end(), varName.substr(1));
+
+            if (it != toggleAliasesRunning.end()) {
+                toggleAliasesRunning.erase(it);
+                return true;
+            }
+            
+            return false;
+        }
+
+        return true;
+    }
+
     void Parser::handleAliasLexer(const std::string &input) {
         std::vector<Lexer*> tempLexers;
         tempLexers.push_back(lexer);
@@ -620,9 +663,10 @@ namespace HayBCMD {
             std::string variable = getVariableFromCurrentTokenValue();
 
             if (!variable.empty()) {
-                tempLexers.push_back(lexer);
-
-                lexer = new Lexer(variable);
+                if (handleSpecialAliases()) {
+                    tempLexers.push_back(lexer);
+                    lexer = new Lexer(variable);
+                }
             }
 
             else if (currentToken.getType() == TokenType::COMMAND)
@@ -664,33 +708,7 @@ namespace HayBCMD {
             std::string variableValue = getVariableFromCurrentTokenValue();
 
             if (!variableValue.empty()) {
-                std::string varName = currentToken.getValue();
-                char front = varName.front();
-                
-                if (front == '!') {
-                    auto it = std::find(loopAliasesRunning.begin(), loopAliasesRunning.end(), varName);
-                    // if is already running, stop
-                    if (it != loopAliasesRunning.end())
-                        loopAliasesRunning.erase(it);
-                    else // if not, make it run
-                        loopAliasesRunning.push_back(varName);
-
-                } else if (front == '+') { // if it is not running, start
-                    auto it = std::find(toggleAliasesRunning.begin(), toggleAliasesRunning.end(), varName.substr(1));
-                    if (it == toggleAliasesRunning.end()) {
-                        toggleAliasesRunning.push_back(varName.substr(1));
-                        handleAliasLexer(variableValue);
-                    }
-
-                } else if (front == '-') { // else: the + version had already ran, so now it will turn off
-                    auto it = std::find(toggleAliasesRunning.begin(), toggleAliasesRunning.end(), varName.substr(1));
-
-                    if (it != toggleAliasesRunning.end()) {
-                        toggleAliasesRunning.erase(it);
-                        handleAliasLexer(variableValue);
-                    }
-                
-                } else
+                if (handleSpecialAliases())
                     handleAliasLexer(variableValue);
             }
 

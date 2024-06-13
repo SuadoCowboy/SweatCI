@@ -103,12 +103,8 @@ namespace HayBCMD {
         }
 
         static void print(const OutputLevel &level, const std::string &str);
-
         static void setPrintFunction(PrintFunction printFunc);
-
-        static void printUnknownCommand(std::string command) {
-            print(OutputLevel::ERROR, "unknown command \"" + command + "\"\n");
-        }
+        static void printUnknownCommand(const std::string &command);
 
     private:
         static PrintFunction printFunc;
@@ -215,6 +211,8 @@ namespace HayBCMD {
         void advance();
         void advanceUntil(const std::vector<TokenType> &tokenTypes);
         void handleCommandToken();
+        /// @return true if should execute alias
+        bool handleSpecialAliases();
         void handleAliasLexer(const std::string &input);
 
         Token currentToken;
