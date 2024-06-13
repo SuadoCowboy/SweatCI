@@ -472,8 +472,8 @@ namespace HayBCMD {
     std::unordered_map<std::string, float> CVARStorage::floatCvars;
     std::unordered_map<std::string, std::string> CVARStorage::stringCvars;
 
-    std::set<std::string> loopAliasesRunning = {};
-    std::set<std::string> toggleAliasesRunning = {};
+    std::vector<std::string> loopAliasesRunning = {};
+    std::vector<std::string> toggleAliasesRunning = {};
 
     void handleLoopAliasesRunning(std::unordered_map<std::string, std::string> &variables) {
         for (auto& loopAlias : loopAliasesRunning) {
@@ -668,12 +668,12 @@ namespace HayBCMD {
                     if (it != loopAliasesRunning.end())
                         loopAliasesRunning.erase(it);
                     else // if not, make it run
-                        loopAliasesRunning.emplace(varName);
+                        loopAliasesRunning.push_back(varName);
 
                 } else if (front == '+') { // if it is not running, start
                     auto it = std::find(toggleAliasesRunning.begin(), toggleAliasesRunning.end(), varName.substr(1));
                     if (it == toggleAliasesRunning.end()) {
-                        toggleAliasesRunning.emplace(varName.substr(1));
+                        toggleAliasesRunning.push_back(varName.substr(1));
                         handleAliasLexer(variableValue);
                     }
 
