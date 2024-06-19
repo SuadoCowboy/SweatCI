@@ -140,7 +140,7 @@ namespace HayBCMD {
         variables = _variables;
 
         // Add commands
-        Command("help", 1, 1, help, "<command> - shows a list of commands usages or the usage of a specific command");
+        Command("help", 1, 1, help, "<command> - shows the usage of the command specified");
         Command("echo", 1, 1, echo, "<message> - echoes a message to the console");
         Command("alias", 1, 2, alias, "<var> <commands?> - creates/deletes variables");
         Command("variables", 0, 0, getVariables, "- list of variables");
