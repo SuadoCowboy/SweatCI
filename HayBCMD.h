@@ -143,12 +143,13 @@ namespace HayBCMD {
     private:
         static std::unordered_map<std::string, std::string> *variables;
 
-        static void help(Command* _pCommand, const std::vector<std::string>& args);
-        static void echo(Command* _pCommand, const std::vector<std::string>& args);
-        static void alias(Command* _pCommand, const std::vector<std::string>& args);
-        static void getVariables(Command* _pCommand, const std::vector<std::string>& args);
-        static void variable(Command* _pCommand, const std::vector<std::string>& args);
-        static void incrementvar(Command* _pCommand, const std::vector<std::string>& args);
+        static void help(Command*, const std::vector<std::string>& args);
+        static void echo(Command*, const std::vector<std::string>& args);
+        static void alias(Command*, const std::vector<std::string>& args);
+        static void getVariables(Command*, const std::vector<std::string>&);
+        static void variable(Command*, const std::vector<std::string>& args);
+        static void incrementvar(Command*, const std::vector<std::string>& args);
+        static void exec(Command*, const std::vector<std::string>& args);
     };
 
     class Lexer {
@@ -221,4 +222,6 @@ namespace HayBCMD {
         std::unordered_map<std::string, std::string>& variables;
         std::string getVariableFromCurrentTokenValue();
     };
+
+    void execConfigFile(const std::string& path, std::unordered_map<std::string, std::string>& variables);
 }

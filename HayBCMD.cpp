@@ -26,6 +26,7 @@
 
 #include <regex>
 #include <algorithm>
+#include <fstream>
 
 namespace HayBCMD {
     std::string tokenTypeToString(const TokenType& type) {
@@ -145,6 +146,7 @@ namespace HayBCMD {
         Command("variables", 0, 0, getVariables, "- list of variables");
         Command("variable", 1, 1, variable, "- shows variable value");
         Command("incrementvar", 4, 4, incrementvar, "<var> <minValue> <maxValue> <delta> - increments the value of a variable");
+        Command("exec", 1, 1, exec, "executes a .cfg file that contains HayBCMD script");
     }
 
     void BaseCommands::help(Command*, const std::vector<std::string>& args) {
@@ -264,6 +266,10 @@ namespace HayBCMD {
             variableValue = maxValue;
 
         (*variables)[variable] = std::to_string(variableValue);
+    }
+
+    void BaseCommands::exec(Command*, const std::vector<std::string>& args) {
+        execConfigFile(args[0], *variables);
     }
 
     std::unordered_map<std::string, std::string> *BaseCommands::variables;
@@ -724,5 +730,25 @@ namespace HayBCMD {
 
             advance();
         }
+    }
+
+    void execConfigFile(const std::string& path, std::unordered_map<std::string, std::string>& variables) {
+        std::ifstream file(path);
+
+        if (!file) {
+            Output::printf(OutputLevel::ERROR, "could not load file \"{}\"\n", path);
+            return;
+        }
+
+        std::stringstream content;
+        while (file.good()) {
+            std::string line;
+            std::getline(file, line);
+            content << line << ";";
+        }
+
+        Lexer lexer{content.str()};
+        Parser parser(&lexer, variables);
+        parser.parse();
     }
 }
