@@ -140,7 +140,7 @@ namespace HayBCMD {
         variables = _variables;
 
         // Add commands
-        Command("help", 0, 1, help, "<command?> - shows a list of commands usages or the usage of a specific command");
+        Command("help", 1, 1, help, "<command> - shows a list of commands usages or the usage of a specific command");
         Command("echo", 1, 1, echo, "<message> - echoes a message to the console");
         Command("alias", 1, 2, alias, "<var> <commands?> - creates/deletes variables");
         Command("variables", 0, 0, getVariables, "- list of variables");
@@ -156,11 +156,6 @@ namespace HayBCMD {
             if (command != nullptr)
                 Command::printUsage(*(Command*)command);
             return;
-        }
-
-        // Print usage for all commands
-        for (const auto &command : Command::getCommands()) {
-            Command::printUsage(command);
         }
     }
 
