@@ -28,7 +28,7 @@
 #include <algorithm>
 
 namespace HayBCMD {
-    std::string tokenTypeToString(const TokenType &type) {
+    std::string tokenTypeToString(const TokenType& type) {
         switch (type) {
         case STRING:
             return "STRING";
@@ -48,18 +48,18 @@ namespace HayBCMD {
     Token::Token() : type(NOTHING), value("") {}
     Token::~Token() {}
 
-    Token::Token(const HayBCMD::Token &other) : type(other.type), value(other.value) {}
+    Token::Token(const HayBCMD::Token& other) : type(other.type), value(other.value) {}
 
-    Token::Token(const TokenType &type, const std::string& value) : type(type), value(value) {}
+    Token::Token(const TokenType& type, const std::string& value) : type(type), value(value) {}
 
-    Token &Token::operator=(const Token &other) {
+    Token& Token::operator=(const Token& other) {
         type = other.type;
         value = other.value;
 
         return *this;
     }
 
-    const TokenType &Token::getType() const {
+    const TokenType& Token::getType() const {
         return type;
     }
 
@@ -85,7 +85,7 @@ namespace HayBCMD {
 
     PrintFunction Output::printFunc;
 
-    void Command::addCommand(Command *pCommand) {
+    void Command::addCommand(Command* pCommand) {
         for (const auto &c : commands) {
             if (c.name == pCommand->name) {
                 Output::printf(OutputLevel::ERROR, "Command with name \"{s}\" already exists\n", pCommand->name);
@@ -100,7 +100,7 @@ namespace HayBCMD {
         addCommand(this);
     }
 
-    Command *Command::getCommand(const std::string& name, bool printError) {
+    Command* Command::getCommand(const std::string& name, bool printError) {
         for (auto &command : commands)
             if (command.name == name) return &command;
 
@@ -121,7 +121,7 @@ namespace HayBCMD {
         return false;
     }
 
-    const std::vector<Command> &Command::getCommands() {
+    const std::vector<Command>& Command::getCommands() {
         return commands;
     }
 
@@ -129,7 +129,7 @@ namespace HayBCMD {
         Output::print(OutputLevel::WARNING, command.name + ' ' + command.usage + '\n');
     }
 
-    void Command::run(const std::vector<std::string> &args) {
+    void Command::run(const std::vector<std::string>& args) {
         commandCallFunc(this, args);
     }
 
@@ -147,10 +147,10 @@ namespace HayBCMD {
         Command("incrementvar", 4, 4, incrementvar, "<var> <minValue> <maxValue> <delta> - increments the value of a variable");
     }
 
-    void BaseCommands::help(Command*, const std::vector<std::string> &args) {
+    void BaseCommands::help(Command*, const std::vector<std::string>& args) {
         if (args.size() == 1) {
             // Print usage for a specific command
-            Command *command = Command::getCommand(args[0], true);
+            Command* command = Command::getCommand(args[0], true);
             if (command != nullptr)
                 Command::printUsage(*(Command*)command);
             return;
@@ -162,7 +162,7 @@ namespace HayBCMD {
         }
     }
 
-    void BaseCommands::echo(Command*, const std::vector<std::string> &args) {
+    void BaseCommands::echo(Command*, const std::vector<std::string>& args) {
         std::string message;
         for (const auto &arg : args) {
             message += arg;
@@ -170,7 +170,7 @@ namespace HayBCMD {
         Output::print(OutputLevel::ECHO, message + '\n');
     }
 
-    void BaseCommands::alias(Command*, const std::vector<std::string> &args) {
+    void BaseCommands::alias(Command*, const std::vector<std::string>& args) {
         if (args.size() == 1 && variables->count(args[0]) != 0) {
             variables->erase(args[0]);
             if (args[0].front() == '!') {
@@ -211,7 +211,7 @@ namespace HayBCMD {
         Output::print(OutputLevel::ECHO, out.str()+'\n');
     }
 
-    void BaseCommands::variable(Command*, const std::vector<std::string> &args) {
+    void BaseCommands::variable(Command*, const std::vector<std::string>& args) {
         const std::string& key = args[0];
         auto it = variables->find(key);
         if (it == variables->end()) {
@@ -222,7 +222,7 @@ namespace HayBCMD {
         Output::print(OutputLevel::ECHO, key + " = \"" + it->second + "\"\n");
     }
 
-    void BaseCommands::incrementvar(Command*, const std::vector<std::string> &args) {
+    void BaseCommands::incrementvar(Command*, const std::vector<std::string>& args) {
         const std::string& variable = args[0];
         double minValue, maxValue, delta;
 
@@ -420,7 +420,7 @@ namespace HayBCMD {
         return false;
     }
     
-    void CVARStorage::asCommand(Command *pCommand, const std::vector<std::string> &args) {
+    void CVARStorage::asCommand(Command* pCommand, const std::vector<std::string>& args) {
         char type = pCommand->usage.at(1); // usage = "(string/float/boolean) [...]"; this gets the first char after '('
         
         // if should print to output
@@ -484,14 +484,14 @@ namespace HayBCMD {
     std::vector<std::string> loopAliasesRunning = {};
     std::vector<std::string> toggleAliasesRunning = {};
 
-    void handleLoopAliasesRunning(std::unordered_map<std::string, std::string> &variables) {
+    void handleLoopAliasesRunning(std::unordered_map<std::string, std::string>& variables) {
         for (auto& loopAlias : loopAliasesRunning) {
             Lexer lexer{variables[loopAlias]};
             Parser(&lexer, variables).parse();
         }
     }
 
-    Parser::Parser(Lexer *lexer, std::unordered_map<std::string, std::string> &variables) : lexer(lexer), variables(variables) {
+    Parser::Parser(Lexer *lexer, std::unordered_map<std::string, std::string>& variables) : lexer(lexer), variables(variables) {
         advance();
     }
 
@@ -499,7 +499,7 @@ namespace HayBCMD {
         currentToken = lexer->nextToken();
     }
 
-    void Parser::advanceUntil(const std::vector<TokenType> &tokenTypes) {
+    void Parser::advanceUntil(const std::vector<TokenType>& tokenTypes) {
         advance(); // always skip the first one
 
         // checks if EOF is reached because if not, it would run forever
@@ -583,7 +583,7 @@ namespace HayBCMD {
     void Parser::handleCommandToken() {
         std::string commandString = currentToken.getValue();
 
-        Command *command = Command::getCommand(commandString, true);
+        Command* command = Command::getCommand(commandString, true);
         if (command == nullptr)
             return;
 
