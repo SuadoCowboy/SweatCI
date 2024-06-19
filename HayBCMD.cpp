@@ -96,7 +96,7 @@ namespace HayBCMD {
     }
 
     Command::Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage)
-        : name(name), minArgs(minArgs), maxArgs(maxArgs), usage(usage), commandCallFunc(commandCallFunc) {
+        : name(name), usage(usage), minArgs(minArgs), maxArgs(maxArgs), commandCallFunc(commandCallFunc) {
         addCommand(this);
     }
 
