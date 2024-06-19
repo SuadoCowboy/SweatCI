@@ -38,9 +38,14 @@ int main()
         running = false;
     }, "- quits");
 
+    std::string testCvar = "Happy Face :)";
+    HayBCMD::CVARStorage::cvar("testCvar", &testCvar, "Happy face :)");
+
     while (running) {
         std::string input;
         std::getline(std::cin, input);
+
+        HayBCMD::Output::printf(HayBCMD::ECHO, "{}\n", testCvar);
 
         HayBCMD::Lexer lexer = input;
         HayBCMD::Parser(&lexer, variables).parse();
