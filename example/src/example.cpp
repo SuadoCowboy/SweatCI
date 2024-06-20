@@ -38,11 +38,11 @@ int main()
         running = false;
     }, "- quits");
 
-    std::string userName = "Suado Cowboy";
-    HayBCMD::CVARStorage::cvar<std::string>("user_name", &userName,
+    std::string userName = "Jane Doe";
+    HayBCMD::CVARStorage::setCvar("user_name",
         [&](const std::string& value){userName = value;},
         [&](){return userName;},
-        "the name of the user :P");
+        "- the name of the user :P");
 
     while (running) {
         std::string input;

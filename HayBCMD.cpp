@@ -349,6 +349,12 @@ namespace HayBCMD {
         return Token(TokenType::STRING, tokenValue);
     }
 
+    void CVARStorage::setCvar(const std::string& name, const std::function<void(const std::string& value)>& set, const std::function<std::string()>& toString, const std::string& usage) {
+        cvars[name] = {set, toString};
+
+        Command(name, 0, 1, (CommandCall)asCommand, usage);
+    }
+
     bool CVARStorage::getCvar(const std::string& name, CVariable*& buf) {
         for (auto cvar : cvars)
             if (cvar.first == name) {

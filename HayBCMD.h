@@ -169,36 +169,14 @@ namespace HayBCMD {
         Token lastToken;
     };
 
-    class CVariable {
-    public:
+    struct CVariable {
         std::function<void(const std::string& value)> set;
         std::function<std::string()> toString;
-
-        virtual void* get() {return nullptr;}
-    };
-
-    template<typename T>
-    class CVariableImpl : public CVariable {
-    public:
-        T* pointer;
-
-        void* get() override { return pointer; }
-
-        CVariableImpl(T* pointer, const std::function<void(const std::string& value)>& _set, const std::function<std::string()>& _toString)
-            : pointer(pointer) {
-                set = _set;
-                toString = _toString;
-            }
     };
 
     class CVARStorage {
     public:
-        template<typename T>
-        static void cvar(const std::string& name, T* value, const std::function<void(const std::string& value)>& set, const std::function<std::string()>& toString, const std::string& usage) {
-            cvars[name] = CVariableImpl<T>(value, set, toString);
-
-            Command(name, 0, 1, (CommandCall)asCommand, usage);
-        }
+        static void setCvar(const std::string& name, const std::function<void(const std::string& value)>& set, const std::function<std::string()>& toString, const std::string& usage);
 
         /// @brief Searches for the CVAR and returns it to a buffer
         /// @return false if could not get cvar
