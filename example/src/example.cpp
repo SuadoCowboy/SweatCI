@@ -38,6 +38,12 @@ int main()
         running = false;
     }, "- quits");
 
+    std::string userName = "Suado Cowboy";
+    HayBCMD::CVARStorage::cvar<std::string>("user_name", &userName,
+        [&](const std::string& value){userName = value;},
+        [&](){return userName;},
+        "the name of the user :P");
+
     while (running) {
         std::string input;
         std::getline(std::cin, input);

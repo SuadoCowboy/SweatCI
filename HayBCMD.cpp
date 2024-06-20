@@ -349,138 +349,34 @@ namespace HayBCMD {
         return Token(TokenType::STRING, tokenValue);
     }
 
-    void CVARStorage::cvar(const std::string& name, bool* value, const std::string& usage) {
-        boolCvars[name] = value;
-
-        Command(name, 0, 1, (CommandCall)asCommand,
-                formatString("(boolean) - {}", usage));
-    }
-        
-    void CVARStorage::cvar(const std::string& name, float* value, const std::string& usage) {
-        floatCvars[name] = value;
-
-        Command(name, 0, 1, (CommandCall)asCommand,
-                formatString("(float) - {}", usage));
-    }
-    
-    void CVARStorage::cvar(const std::string& name, std::string* value, const std::string& usage) {
-        stringCvars[name] = value;
-
-        Command(name, 0, 1, (CommandCall)asCommand,
-                formatString("(string) - {}", usage));
-    }
-
-    void CVARStorage::setCvar(const std::string& name, const bool& value) {
-        if (boolCvars.count(name) == 0) {
-            Output::printf(OutputLevel::ERROR, "tried to change value of non-existent boolean CVAR \"{}\"", name);
-            return;
-        }
-
-        *boolCvars[name] = value;
-    }
-
-    void CVARStorage::setCvar(const std::string& name, const float& value) {
-        if (floatCvars.count(name) == 0) {
-            Output::printf(OutputLevel::ERROR, "tried to change value of non-existent float CVAR \"{}\"", name);
-            return;
-        }
-
-        *floatCvars[name] = value;
-    }
-
-    void CVARStorage::setCvar(const std::string& name, const std::string& value) {
-        if (stringCvars.count(name) == 0) {
-            Output::printf(OutputLevel::ERROR, "tried to change value of non-existent string CVAR \"{}\"", name);
-            return;
-        }
-
-        *stringCvars[name] = value;
-    }
-
-    // Searches for the CVAR and returns it to a buffer
-    // @return false if could not get cvar
-    bool CVARStorage::getCvar(const std::string& name, bool*& buf) {
-        for (auto cvar : boolCvars)
-            if (cvar.first == name) {buf = cvar.second; return true;}
+    bool CVARStorage::getCvar(const std::string& name, CVariable*& buf) {
+        for (auto cvar : cvars)
+            if (cvar.first == name) {
+                buf = &cvar.second;
+                return true;
+            }
         return false;
     }
 
-    // Searches for the CVAR and returns it to a buffer
-    // @return false if could not get cvar
-    bool CVARStorage::getCvar(const std::string& name, std::string*& buf) {
-        for (auto cvar : stringCvars)
-            if (cvar.first == name) {buf = cvar.second; return true;}
-        return false;
-    }
-
-    // Searches for the CVAR and returns it to a buffer
-    // @return false if could not get cvar
-    bool CVARStorage::getCvar(const std::string& name, float*& buf) {
-        for (auto cvar : floatCvars)
-            if (cvar.first == name) {buf = cvar.second; return true;}
-        return false;
-    }
-    
     void CVARStorage::asCommand(Command* pCommand, const std::vector<std::string>& args) {
-        char type = pCommand->usage.at(1); // usage = "(string/float/boolean) [...]"; this gets the first char after '('
-        
+        CVariable* buf;
+        getCvar(pCommand->name, buf);
+
         // if should print to output
         if (args.size() == 0) {
-            if (type == 'b') {
-                bool* buf;
-                getCvar(pCommand->name, buf);
-                Output::printf(OutputLevel::ECHO, "{}\n", *buf);
-            
-            } else if (type == 'f') {
-                float* buf;
-                getCvar(pCommand->name, buf);
-                Output::printf(OutputLevel::ECHO, "{}\n", *buf);
-            
-            } else if (type == 's') {
-                std::string* buf;
-                getCvar(pCommand->name, buf);
-                Output::printf(OutputLevel::ECHO, "{}\n", *buf);
-            }
+            Output::printf(OutputLevel::ECHO, "{}\n", buf->toString());
             return;
         }
 
         // if should set value
-        if (type == 'b')
-            try {
-                *boolCvars[pCommand->name] = (bool)std::stoi(args[0]);
-            } catch (...) {
-                Command::printUsage(*pCommand);
-            }
-        
-        else if (type == 'f')
-            try {
-                *floatCvars[pCommand->name] = std::stof(args[0]);
-            } catch (...) {
-                Command::printUsage(*pCommand);
-            }
-        
-        else if (type == 's')
-            try {
-                *stringCvars[pCommand->name] = args[0];
-            } catch (...) {
-                Command::printUsage(*pCommand);
-            }
+        try {
+            buf->set(args[0]);
+        } catch (...) {
+            Command::printUsage(*pCommand);
+        }
     }
 
-    char CVARStorage::getCvarType(const std::string& name) {
-        bool* bBuf;
-        std::string* sBuf;
-        float* fBuf;
-        if (getCvar(name, bBuf)) return 'b';
-        if (getCvar(name, sBuf)) return 's';
-        if (getCvar(name, fBuf)) return 'f';
-
-        return 'n';
-    }
-
-    std::unordered_map<std::string, bool*> CVARStorage::boolCvars;
-    std::unordered_map<std::string, float*> CVARStorage::floatCvars;
-    std::unordered_map<std::string, std::string*> CVARStorage::stringCvars;
+    std::unordered_map<std::string, CVariable> CVARStorage::cvars;
 
     std::vector<std::string> loopAliasesRunning = {};
     std::vector<std::string> toggleAliasesRunning = {};
@@ -533,27 +429,14 @@ namespace HayBCMD {
                         }
                         
                         auto it = variables.find(variable);
-                        if (it != variables.end()) {
+                        if (it != variables.end())
                             result += it->second; // add variable
                         
-                        } else { // search in cvars
-                            char cvarType = CVARStorage::getCvarType(variable);
-                            if (cvarType == 'b') {
-                                bool* buf;
-                                CVARStorage::getCvar(variable, buf);
-                                result += std::to_string(*buf);
-                            
-                            } else if (cvarType == 'f') {
-                                float* buf;
-                                CVARStorage::getCvar(variable, buf);
-                                result += std::to_string(*buf);
-                            
-                            } else if (cvarType == 's') {
-                                std::string* buf;
-                                CVARStorage::getCvar(variable, buf);
-                                result += *buf;
-                            
-                            } else
+                        else { // search in cvars
+                            CVariable* buf;
+                            if (CVARStorage::getCvar(variable, buf))
+                                result += buf->toString();
+                            else
                                 result += "$" + variable; // or else just add with the $
                         }
                     }
