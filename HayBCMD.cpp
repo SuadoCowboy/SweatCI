@@ -629,7 +629,7 @@ namespace HayBCMD {
             std::string line;
             std::getline(file, line);
             for (size_t i = 0; i < line.size(); ++i) {
-                if (line[i] == '\\' && line.size()-1 != i && line[i+1] == '\\') {
+                if (line[i] == '/' && line.size()-1 != i && line[i+1] == '/') {
                     line = line.substr(0, i);
                     break;
                 }
