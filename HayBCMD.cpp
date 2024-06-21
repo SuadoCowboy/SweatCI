@@ -140,23 +140,33 @@ namespace HayBCMD {
         variables = _variables;
 
         // Add commands
-        Command("help", 1, 1, help, "<command> - shows the usage of the command specified");
+        Command("help", 0, 1, help, "<command> - shows the usage of the command specified");
+        Command("commands", 0, 0, commands, "- shows a list of commands with their usages");
         Command("echo", 1, 1, echo, "<message> - echoes a message to the console");
         Command("alias", 1, 2, alias, "<var> <commands?> - creates/deletes variables");
         Command("variables", 0, 0, getVariables, "- list of variables");
         Command("variable", 1, 1, variable, "- shows variable value");
         Command("incrementvar", 4, 4, incrementvar, "<var> <minValue> <maxValue> <delta> - increments the value of a variable");
-        Command("exec", 1, 1, exec, "executes a .cfg file that contains HayBCMD script");
+        Command("exec", 1, 1, exec, "- executes a .cfg file that contains HayBCMD script");
     }
 
-    void BaseCommands::help(Command*, const std::vector<std::string>& args) {
+    void BaseCommands::help(Command* pCommand, const std::vector<std::string>& args) {
         if (args.size() == 1) {
             // Print usage for a specific command
             Command* command = Command::getCommand(args[0], true);
             if (command != nullptr)
                 Command::printUsage(*(Command*)command);
             return;
-        }
+        } else
+            Output::printf(OutputLevel::WARNING, "{} - {} - see \"commands\" command to get a list of commands", pCommand->name, pCommand->usage);
+    }
+
+    void BaseCommands::commands(Command*, const std::vector<std::string>&) {
+        std::stringstream out;
+        for (auto& command : Command::getCommands())
+            out << command.name << " " << command.usage;
+
+        Output::print(OutputLevel::ECHO, out.str());
     }
 
     void BaseCommands::echo(Command*, const std::vector<std::string>& args) {

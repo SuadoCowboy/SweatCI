@@ -144,6 +144,7 @@ namespace HayBCMD {
         static std::unordered_map<std::string, std::string> *variables;
 
         static void help(Command*, const std::vector<std::string>& args);
+        static void commands(Command*, const std::vector<std::string>&);
         static void echo(Command*, const std::vector<std::string>& args);
         static void alias(Command*, const std::vector<std::string>& args);
         static void getVariables(Command*, const std::vector<std::string>&);
