@@ -158,13 +158,13 @@ namespace HayBCMD {
                 Command::printUsage(*(Command*)command);
             return;
         } else
-            Output::printf(OutputLevel::WARNING, "{} - {} - see \"commands\" command to get a list of commands", pCommand->name, pCommand->usage);
+            Output::printf(OutputLevel::WARNING, "{} - {} - see \"commands\" command to get a list of commands\n", pCommand->name, pCommand->usage);
     }
 
     void BaseCommands::commands(Command*, const std::vector<std::string>&) {
         std::stringstream out;
         for (auto& command : Command::getCommands())
-            out << command.name << " " << command.usage;
+            out << command.name << " " << command.usage << "\n";
 
         Output::print(OutputLevel::ECHO, out.str());
     }
