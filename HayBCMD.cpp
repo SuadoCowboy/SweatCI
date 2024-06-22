@@ -86,19 +86,20 @@ namespace HayBCMD {
 
     PrintFunction Output::printFunc;
 
-    void Command::addCommand(Command* pCommand) {
-        for (const auto &c : commands) {
-            if (c.name == pCommand->name) {
-                Output::printf(OutputLevel::ERROR, "Command with name \"{s}\" already exists\n", pCommand->name);
+    void Command::addCommand(Command& command) {
+        for (const auto& c : commands) {
+            if (c.name == command.name) {
+                Output::printf(OutputLevel::ERROR, "Command with name \"{s}\" already exists\n", command.name);
                 return;
             }
         }
-        commands.push_back(*pCommand);
+        commands.emplace_back(command);
     }
 
-    Command::Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage)
-        : name(name), usage(usage), minArgs(minArgs), maxArgs(maxArgs), commandCallFunc(commandCallFunc) {
-        addCommand(this);
+    Command::Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage, void* pData)
+        : name(name), usage(usage), minArgs(minArgs), maxArgs(maxArgs),
+        commandCallFunc(commandCallFunc), pData(pData) {
+        addCommand(*this);
     }
 
     Command* Command::getCommand(const std::string& name, bool printError) {
@@ -112,12 +113,11 @@ namespace HayBCMD {
     }
 
     bool Command::deleteCommand(const std::string& commandName) {
-        for (size_t i = 0; i < commands.size(); ++i) {
+        for (size_t i = 0; i < commands.size(); ++i)
             if (commands[i].name == commandName) {
                 commands.erase(commands.begin() + i);
                 return true;
             }
-        }
 
         return false;
     }
@@ -130,8 +130,12 @@ namespace HayBCMD {
         Output::print(OutputLevel::WARNING, command.name + ' ' + command.usage + '\n');
     }
 
+    void Command::clear() {
+        commands.clear();
+    }
+
     void Command::run(const std::vector<std::string>& args) {
-        commandCallFunc(this, args);
+        commandCallFunc(pData, args);
     }
 
     std::vector<Command> Command::commands;
@@ -150,7 +154,9 @@ namespace HayBCMD {
         Command("exec", 1, 1, exec, "- executes a .cfg file that contains HayBCMD script");
     }
 
-    void BaseCommands::help(Command* pCommand, const std::vector<std::string>& args) {
+    void BaseCommands::help(void*, const std::vector<std::string>& args) {
+        Command* pCommand = Command::getCommand("help", false);
+
         if (args.size() == 1) {
             // Print usage for a specific command
             Command* command = Command::getCommand(args[0], true);
@@ -158,10 +164,10 @@ namespace HayBCMD {
                 Command::printUsage(*(Command*)command);
             return;
         } else
-            Output::printf(OutputLevel::WARNING, "{} - {} - see \"commands\" command to get a list of commands\n", pCommand->name, pCommand->usage);
+            Output::printf(OutputLevel::WARNING, "{} {} - see \"commands\" command to get a list of commands\n", pCommand->name, pCommand->usage);
     }
 
-    void BaseCommands::commands(Command*, const std::vector<std::string>&) {
+    void BaseCommands::commands(void*, const std::vector<std::string>&) {
         std::stringstream out;
         for (auto& command : Command::getCommands())
             out << command.name << " " << command.usage << "\n";
@@ -169,7 +175,7 @@ namespace HayBCMD {
         Output::print(OutputLevel::ECHO, out.str());
     }
 
-    void BaseCommands::echo(Command*, const std::vector<std::string>& args) {
+    void BaseCommands::echo(void*, const std::vector<std::string>& args) {
         std::string message;
         for (const auto &arg : args) {
             message += arg;
@@ -177,7 +183,7 @@ namespace HayBCMD {
         Output::print(OutputLevel::ECHO, message + '\n');
     }
 
-    void BaseCommands::alias(Command*, const std::vector<std::string>& args) {
+    void BaseCommands::alias(void*, const std::vector<std::string>& args) {
         if (args.size() == 1 && variables->count(args[0]) != 0) {
             variables->erase(args[0]);
             if (args[0].front() == '!') {
@@ -208,7 +214,7 @@ namespace HayBCMD {
         (*variables)[args[0]] = args[1];
     }
 
-    void BaseCommands::getVariables(Command*, const std::vector<std::string>&) {
+    void BaseCommands::getVariables(void*, const std::vector<std::string>&) {
         std::stringstream out;
 
         out << "amount of variables: " << variables->size();
@@ -218,7 +224,7 @@ namespace HayBCMD {
         Output::print(OutputLevel::ECHO, out.str()+'\n');
     }
 
-    void BaseCommands::variable(Command*, const std::vector<std::string>& args) {
+    void BaseCommands::variable(void*, const std::vector<std::string>& args) {
         const std::string& key = args[0];
         auto it = variables->find(key);
         if (it == variables->end()) {
@@ -229,7 +235,7 @@ namespace HayBCMD {
         Output::print(OutputLevel::ECHO, key + " = \"" + it->second + "\"\n");
     }
 
-    void BaseCommands::incrementvar(Command*, const std::vector<std::string>& args) {
+    void BaseCommands::incrementvar(void*, const std::vector<std::string>& args) {
         const std::string& variable = args[0];
         double minValue, maxValue, delta;
 
@@ -273,7 +279,7 @@ namespace HayBCMD {
         (*variables)[variable] = std::to_string(variableValue);
     }
 
-    void BaseCommands::exec(Command*, const std::vector<std::string>& args) {
+    void BaseCommands::exec(void*, const std::vector<std::string>& args) {
         execConfigFile(args[0], *variables);
     }
 
@@ -362,19 +368,29 @@ namespace HayBCMD {
     void CVARStorage::setCvar(const std::string& name, const std::function<void(const std::string& value)>& set, const std::function<std::string()>& toString, const std::string& usage) {
         cvars[name] = {set, toString};
 
-        Command(name, 0, 1, (CommandCall)asCommand, usage);
+        Command(name, 0, 1, asCommand, usage);
+        
+        // after so much trouble I finally got it to work. But I don't know if that's the best method...
+        Command* pCommand = Command::getCommand(name, false); 
+        pCommand->pData = &pCommand->name;
     }
 
     bool CVARStorage::getCvar(const std::string& name, CVariable*& buf) {
-        for (auto cvar : cvars)
-            if (cvar.first == name) {
-                buf = &cvar.second;
-                return true;
-            }
-        return false;
+        if (cvars.count(name) == 0)
+            return false;
+
+        buf = &cvars[name];
+        return true;
     }
 
-    void CVARStorage::asCommand(Command* pCommand, const std::vector<std::string>& args) {
+    void CVARStorage::asCommand(void* pData, const std::vector<std::string>& args) {
+        if (pData == nullptr) {
+            Output::print(OutputLevel::ERROR, "pData == nullptr\n");
+            return;
+        }
+
+        Command* pCommand = Command::getCommand(*static_cast<std::string*>(pData), false);
+        
         CVariable* buf;
         getCvar(pCommand->name, buf);
 

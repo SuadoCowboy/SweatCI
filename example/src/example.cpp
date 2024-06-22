@@ -34,7 +34,7 @@ int main()
     HayBCMD::BaseCommands::init(&variables);
 
     bool running = true;
-    HayBCMD::Command("quit", 0, 0, [&](HayBCMD::Command*, const std::vector<std::string>&) {
+    HayBCMD::Command("quit", 0, 0, [&](void*, const std::vector<std::string>&) {
         running = false;
     }, "- quits");
 
@@ -43,12 +43,17 @@ int main()
         [&](const std::string& value){userName = value;},
         [&](){return userName;},
         "- the name of the user :P");
+    
+    HayBCMD::CVARStorage::setCvar("test",
+        [&](const std::string&){},
+        [&](){return "never!";},
+        "- literally shit");
 
-    HayBCMD::Command("+test", 0, 0, [](HayBCMD::Command*, const std::vector<std::string>&){
+    HayBCMD::Command("+test", 0, 0, [](void*, const std::vector<std::string>&){
         HayBCMD::Output::print(HayBCMD::ECHO, ":)\n");
     }, ":)");
 
-    HayBCMD::Command("-test", 0, 0, [](HayBCMD::Command*, const std::vector<std::string>&){
+    HayBCMD::Command("-test", 0, 0, [](void*, const std::vector<std::string>&){
         HayBCMD::Output::print(HayBCMD::ECHO, ":(\n");
     }, ":)");
 
