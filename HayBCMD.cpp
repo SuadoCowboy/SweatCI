@@ -192,6 +192,12 @@ namespace HayBCMD {
                     loopAliasesRunning.erase(it);
             }
 
+            else if (args[0].front() == '+') {
+                auto it = std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), args[0].substr(1));
+                if (it != toggleTypesRunning.end())
+                    toggleTypesRunning.erase(it);
+            }
+
             return;
         }
 
