@@ -44,6 +44,14 @@ int main()
         [&](){return userName;},
         "- the name of the user :P");
 
+    HayBCMD::Command("+test", 0, 0, [](HayBCMD::Command*, const std::vector<std::string>&){
+        HayBCMD::Output::print(HayBCMD::ECHO, ":)\n");
+    }, ":)");
+
+    HayBCMD::Command("-test", 0, 0, [](HayBCMD::Command*, const std::vector<std::string>&){
+        HayBCMD::Output::print(HayBCMD::ECHO, ":(\n");
+    }, ":)");
+
     while (running) {
         std::string input;
         std::getline(std::cin, input);

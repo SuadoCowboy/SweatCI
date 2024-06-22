@@ -190,7 +190,7 @@ namespace HayBCMD {
     };
 
     extern std::vector<std::string> loopAliasesRunning;
-    extern std::vector<std::string> toggleAliasesRunning;
+    extern std::vector<std::string> toggleTypesRunning;
 
     void handleLoopAliasesRunning(std::unordered_map<std::string, std::string>& variables);
 

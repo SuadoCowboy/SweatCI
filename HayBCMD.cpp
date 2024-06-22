@@ -395,7 +395,7 @@ namespace HayBCMD {
     std::unordered_map<std::string, CVariable> CVARStorage::cvars;
 
     std::vector<std::string> loopAliasesRunning = {};
-    std::vector<std::string> toggleAliasesRunning = {};
+    std::vector<std::string> toggleTypesRunning = {};
 
     void handleLoopAliasesRunning(std::unordered_map<std::string, std::string>& variables) {
         for (auto& loopAlias : loopAliasesRunning) {
@@ -510,6 +510,21 @@ namespace HayBCMD {
             return;
         }
 
+        if (command->name[0] == '+') {
+            if (std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), command->name.substr(1)) != toggleTypesRunning.end())
+                return;
+            
+            toggleTypesRunning.push_back(command->name.substr(1));
+        }
+            
+        else if (command->name[0] == '-') {
+            auto it = std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), command->name.substr(1));
+            if (it == toggleTypesRunning.end())
+                return;
+            
+            toggleTypesRunning.erase(it);
+        }
+
         command->run(arguments);
     }
 
@@ -529,9 +544,9 @@ namespace HayBCMD {
         }
         
         if (front == '+') { // if it is not running, start
-            auto it = std::find(toggleAliasesRunning.begin(), toggleAliasesRunning.end(), varName.substr(1));
-            if (it == toggleAliasesRunning.end()) {
-                toggleAliasesRunning.push_back(varName.substr(1));
+            auto it = std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), varName.substr(1));
+            if (it == toggleTypesRunning.end()) {
+                toggleTypesRunning.push_back(varName.substr(1));
                 return true;
             }
 
@@ -539,10 +554,10 @@ namespace HayBCMD {
         }
         
         if (front == '-') { // else: the + version had already ran, so now it will turn off
-            auto it = std::find(toggleAliasesRunning.begin(), toggleAliasesRunning.end(), varName.substr(1));
+            auto it = std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), varName.substr(1));
 
-            if (it != toggleAliasesRunning.end()) {
-                toggleAliasesRunning.erase(it);
+            if (it != toggleTypesRunning.end()) {
+                toggleTypesRunning.erase(it);
                 return true;
             }
             
