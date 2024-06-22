@@ -372,7 +372,7 @@ namespace HayBCMD {
         
         // after so much trouble I finally got it to work. But I don't know if that's the best method...
         Command* pCommand = Command::getCommand(name, false); 
-        pCommand->pData = &pCommand->name;
+        pCommand->pData = pCommand;
     }
 
     bool CVARStorage::getCvar(const std::string& name, CVariable*& buf) {
@@ -384,12 +384,7 @@ namespace HayBCMD {
     }
 
     void CVARStorage::asCommand(void* pData, const std::vector<std::string>& args) {
-        if (pData == nullptr) {
-            Output::print(OutputLevel::ERROR, "pData == nullptr\n");
-            return;
-        }
-
-        Command* pCommand = Command::getCommand(*static_cast<std::string*>(pData), false);
+        Command* pCommand = (Command*)pData;
         
         CVariable* buf;
         getCvar(pCommand->name, buf);
