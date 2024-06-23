@@ -81,7 +81,7 @@ namespace HayBCMD {
     }
 
     void Output::printUnknownCommand(const std::string& command) {
-        print(OutputLevel::ERROR, "unknown command \"" + command + "\"\n");
+        printf(OutputLevel::ERROR, "unknown command \"{}\"\n", command);
     }
 
     PrintFunction Output::printFunc;
@@ -89,7 +89,7 @@ namespace HayBCMD {
     void Command::addCommand(Command& command) {
         for (const auto& c : commands) {
             if (c.name == command.name) {
-                Output::printf(OutputLevel::ERROR, "Command with name \"{s}\" already exists\n", command.name);
+                Output::printf(OutputLevel::ERROR, "Command with name \"{}\" already exists\n", command.name);
                 return;
             }
         }
