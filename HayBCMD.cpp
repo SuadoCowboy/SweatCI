@@ -89,7 +89,7 @@ namespace HayBCMD {
     void Command::addCommand(Command& command) {
         for (const auto& c : commands) {
             if (c.name == command.name) {
-                Output::printf(OutputLevel::ERROR, "Command with name \"{}\" already exists\n", command.name);
+                Output::printf(OutputLevel::ERROR, "command with name \"{}\" already exists\n", command.name);
                 return;
             }
         }
