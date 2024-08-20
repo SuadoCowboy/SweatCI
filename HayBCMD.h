@@ -180,8 +180,9 @@ namespace HayBCMD {
     };
 
     struct CVariable {
-        std::function<void(const std::string& value)> set;
-        std::function<std::string()> toString;
+        void* pData;
+        void (*set)(void *pData, const std::string &value);
+        std::string (*toString)(void *pData);
     };
 
     class CVARStorage {
@@ -189,7 +190,7 @@ namespace HayBCMD {
         /// @param set to convert a string into the same type and set the new value
         /// @param toString get the cvar value as string
         /// @param usage to be printed out to the console if the user uses help command in it
-        static void setCvar(const std::string& name, const std::function<void(const std::string& value)>& set, const std::function<std::string()>& toString, const std::string& usage);
+        static void setCvar(const std::string& name, void* pData, void(*set)(void *pData, const std::string &value), std::string (*toString)(void *pData), const std::string& usage);
 
         /// @brief Searches for the CVAR and returns it to a buffer
         /// @return false if could not get cvar

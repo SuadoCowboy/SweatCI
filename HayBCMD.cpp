@@ -371,8 +371,8 @@ namespace HayBCMD {
         return Token(TokenType::STRING, tokenValue);
     }
 
-    void CVARStorage::setCvar(const std::string& name, const std::function<void(const std::string& value)>& set, const std::function<std::string()>& toString, const std::string& usage) {
-        cvars[name] = {set, toString};
+    void CVARStorage::setCvar(const std::string& name, void* pData, void(*set)(void *pData, const std::string &value), std::string (*toString)(void *pData), const std::string& usage) {
+        cvars[name] = {pData, set, toString};
 
         Command(name, 0, 1, asCommand, usage);
         
@@ -397,13 +397,13 @@ namespace HayBCMD {
 
         // if should print to output
         if (args.size() == 0) {
-            Output::printf(OutputLevel::ECHO, "{}\n", buf->toString());
+            Output::printf(OutputLevel::ECHO, "{}\n", buf->toString(buf->pData));
             return;
         }
 
         // if should set value
         try {
-            buf->set(args[0]);
+            buf->set(buf->pData, args[0]);
         } catch (...) {
             Command::printUsage(*pCommand);
         }
@@ -468,7 +468,7 @@ namespace HayBCMD {
                         else { // search in cvars
                             CVariable* buf;
                             if (CVARStorage::getCvar(variable, buf))
-                                result += buf->toString();
+                                result += buf->toString(buf->pData);
                             else
                                 result += "$" + variable; // or else just add with the $
                         }
