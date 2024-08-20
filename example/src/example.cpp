@@ -47,21 +47,19 @@ int main()
         HayBCMD::CVARUtils::getString,
         "- the name of the user :P");
 
-    unsigned char flags = 0;
+    bool godmode = false, sendDieMessage = false;
     
-    HayBCMD::CVARUtils::UnsignedCharBitwiseFlag godmodeFlag {flags, 1};
     HayBCMD::CVARStorage::setCvar("godmode",
-        &godmodeFlag,
-        HayBCMD::CVARUtils::setUnsignedCharBitwiseFlag,
-        HayBCMD::CVARUtils::getUnsignedCharBitwiseFlag,
+        &godmode,
+        HayBCMD::CVARUtils::setBoolean,
+        HayBCMD::CVARUtils::getBoolean,
         "- 1/0, whether is godmode or not"
     );
 
-    HayBCMD::CVARUtils::UnsignedCharBitwiseFlag sendDieMessageFlag {flags, 2};
     HayBCMD::CVARStorage::setCvar("send_die_message",
-        &sendDieMessageFlag,
-        HayBCMD::CVARUtils::setUnsignedCharBitwiseFlag,
-        HayBCMD::CVARUtils::getUnsignedCharBitwiseFlag,
+        &sendDieMessage,
+        HayBCMD::CVARUtils::setBoolean,
+        HayBCMD::CVARUtils::getBoolean,
         "- 1/0, whether send die message or not"
     );
 
