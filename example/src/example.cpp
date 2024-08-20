@@ -24,8 +24,13 @@ static std::string outputLevelToString(const HayBCMD::OutputLevel &level) {
     return "UNKNOWN";
 }
 
-static void print(HayBCMD::OutputLevel level, const std::string &string) {
-    std::cout << outputLevelToString(level) << ": " << string;
+void print(const HayBCMD::OutputLevel& level, const std::string& message) {
+    std::cout << outputLevelToString(level) << ": " << message;
+}
+
+bool running = true;
+void setRunningToFalse(void*, const std::vector<std::string>&) {
+    running = false;
 }
 
 int main()
@@ -34,11 +39,8 @@ int main()
 
     std::unordered_map<std::string, std::string> variables{};
     HayBCMD::BaseCommands::init(&variables);
-
-    bool running = true;
-    HayBCMD::Command("quit", 0, 0, [&](void*, const std::vector<std::string>&) {
-        running = false;
-    }, "- quits");
+    
+    HayBCMD::Command("quit", 0, 0, setRunningToFalse, "- quits");
 
     std::string userName = "Jane Doe";
     HayBCMD::CVARStorage::setCvar("user_name",

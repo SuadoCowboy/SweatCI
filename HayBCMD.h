@@ -27,7 +27,6 @@
 #include <sstream>
 #include <unordered_map>
 #include <vector>
-#include <functional>
 
 namespace HayBCMD {
     enum TokenType {
@@ -93,7 +92,7 @@ namespace HayBCMD {
         ERROR, // anything that went wrong
     };
 
-    typedef std::function<void(const OutputLevel& level, const std::string& message)> PrintFunction;
+    typedef void(*PrintFunction)(const OutputLevel& level, const std::string& message);
 
     class Output {
     public:
@@ -110,7 +109,7 @@ namespace HayBCMD {
         static PrintFunction printFunc;
     };
 
-    typedef std::function<void(void* data, const std::vector<std::string>& args)> CommandCall;
+    typedef void(*CommandCall)(void* pData, const std::vector<std::string>& args);
 
     class Command {
     public:
