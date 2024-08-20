@@ -22,7 +22,7 @@ static std::string outputLevelToString(const HayBCMD::OutputLevel &level) {
     return "UNKNOWN";
 }
 
-void print(const HayBCMD::OutputLevel& level, const std::string& message) {
+static void print(const HayBCMD::OutputLevel& level, const std::string& message) {
     std::cout << outputLevelToString(level) << ": " << message;
 }
 
