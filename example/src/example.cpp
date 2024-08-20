@@ -4,8 +4,6 @@
 
 #include "HayBCMD.h"
 
-#include "CVariableUtils.h"
-
 static std::string outputLevelToString(const HayBCMD::OutputLevel &level) {
     switch (level) {
     case HayBCMD::OutputLevel::DEFAULT:
@@ -45,25 +43,25 @@ int main()
     std::string userName = "Jane Doe";
     HayBCMD::CVARStorage::setCvar("user_name",
         &userName,
-        CVARUtils::setString,
-        CVARUtils::getString,
+        HayBCMD::CVARUtils::setString,
+        HayBCMD::CVARUtils::getString,
         "- the name of the user :P");
 
     unsigned char flags = 0;
     
-    CVARUtils::UnsignedCharBitwiseFlag godmodeFlag {flags, 1};
+    HayBCMD::CVARUtils::UnsignedCharBitwiseFlag godmodeFlag {flags, 1};
     HayBCMD::CVARStorage::setCvar("godmode",
         &godmodeFlag,
-        CVARUtils::setUnsignedCharBitwiseFlag,
-        CVARUtils::getUnsignedCharBitwiseFlag,
+        HayBCMD::CVARUtils::setUnsignedCharBitwiseFlag,
+        HayBCMD::CVARUtils::getUnsignedCharBitwiseFlag,
         "- 1/0, whether is godmode or not"
     );
 
-    CVARUtils::UnsignedCharBitwiseFlag sendDieMessageFlag {flags, 2};
+    HayBCMD::CVARUtils::UnsignedCharBitwiseFlag sendDieMessageFlag {flags, 2};
     HayBCMD::CVARStorage::setCvar("send_die_message",
         &sendDieMessageFlag,
-        CVARUtils::setUnsignedCharBitwiseFlag,
-        CVARUtils::getUnsignedCharBitwiseFlag,
+        HayBCMD::CVARUtils::setUnsignedCharBitwiseFlag,
+        HayBCMD::CVARUtils::getUnsignedCharBitwiseFlag,
         "- 1/0, whether send die message or not"
     );
 
