@@ -72,12 +72,13 @@ namespace HayBCMD {
         return "Token(" + tokenTypeToString(type) + ", \"" + value + "\")";
     }
 
-    void Output::setPrintFunction(PrintFunction _printFunc) {
+    void Output::setPrintFunction(void *pData, PrintFunction _printFunc) {
         printFunc = _printFunc;
+        printFuncData = pData;
     }
 
     void Output::print(const OutputLevel &level, const std::string& str) {
-        printFunc(level, str);
+        printFunc(printFuncData, level, str);
     }
 
     void Output::printUnknownCommand(const std::string& command) {
@@ -85,6 +86,7 @@ namespace HayBCMD {
     }
 
     PrintFunction Output::printFunc;
+    void *Output::printFuncData;
 
     void Command::addCommand(Command& command) {
         for (const auto& c : commands) {

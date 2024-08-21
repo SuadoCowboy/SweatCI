@@ -22,7 +22,7 @@ static std::string outputLevelToString(const HayBCMD::OutputLevel &level) {
     return "UNKNOWN";
 }
 
-static void print(const HayBCMD::OutputLevel& level, const std::string& message) {
+static void print(void*, const HayBCMD::OutputLevel& level, const std::string& message) {
     std::cout << outputLevelToString(level) << ": " << message;
 }
 
@@ -33,7 +33,7 @@ void setRunningToFalse(void*, const std::vector<std::string>&) {
 
 int main()
 {
-    HayBCMD::Output::setPrintFunction(print);
+    HayBCMD::Output::setPrintFunction(nullptr, print);
 
     std::unordered_map<std::string, std::string> variables{};
     HayBCMD::BaseCommands::init(&variables);

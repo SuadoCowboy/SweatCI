@@ -92,7 +92,7 @@ namespace HayBCMD {
         ERROR, // anything that went wrong
     };
 
-    typedef void(*PrintFunction)(const OutputLevel& level, const std::string& message);
+    typedef void(*PrintFunction)(void *pData, const OutputLevel& level, const std::string& message);
 
     class Output {
     public:
@@ -102,11 +102,12 @@ namespace HayBCMD {
         }
 
         static void print(const OutputLevel& level, const std::string& str);
-        static void setPrintFunction(PrintFunction printFunc);
+        static void setPrintFunction(void *pData, PrintFunction printFunc);
         static void printUnknownCommand(const std::string& command);
 
     private:
         static PrintFunction printFunc;
+        static void *printFuncData;
     };
 
     typedef void(*CommandCall)(void* pData, const std::vector<std::string>& args);
