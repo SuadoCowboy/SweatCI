@@ -114,12 +114,12 @@ namespace HayBCMD {
 
     class Command {
     public:
-        Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs,
+        static void create(const std::string& name, unsigned char minArgs, unsigned char maxArgs,
             CommandCall commandCallFunc, const std::string& usage, void* pData = nullptr);
         
         static Command* getCommand(const std::string& name, bool printError);
         
-        static const std::vector<Command>& getCommands();
+        static const std::vector<Command*>& getCommands();
         
         static void printUsage(const Command &command);
         
@@ -141,8 +141,10 @@ namespace HayBCMD {
         void* pData = nullptr;
 
     private:
-        static std::vector<Command> commands;
-        static void addCommand(Command& pCommand);
+        Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs,
+            CommandCall commandCallFunc, const std::string& usage, void* pData = nullptr);
+        
+        static std::vector<Command*> commands;
     };
 
     class BaseCommands {
@@ -185,10 +187,25 @@ namespace HayBCMD {
 
         void setBoolean(void *pData, const std::string& value);
         std::string getBoolean(void *pData);
+
+        void setFloat(void *pData, const std::string& value);
+        std::string getFloat(void *pData);
+
+        void setInteger(void *pData, const std::string& value);
+        std::string getInteger(void *pData);
+
+        void setShort(void *pData, const std::string& value);
+        std::string getShort(void *pData);
+
+        void setUnsignedShort(void *pData, const std::string& value);
+        std::string getUnsignedShort(void *pData);
+
+        void setUnsignedChar(void *pData, const std::string& value);
+        std::string getUnsignedChar(void *pData);
     }
 
     struct CVariable {
-        void* pData;
+        void* pData = nullptr;
         void (*set)(void *pData, const std::string &value);
         std::string (*toString)(void *pData);
     };

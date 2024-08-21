@@ -38,36 +38,68 @@ int main()
     std::unordered_map<std::string, std::string> variables{};
     HayBCMD::BaseCommands::init(&variables);
     
-    HayBCMD::Command("quit", 0, 0, setRunningToFalse, "- quits");
+    HayBCMD::Command::create("quit", 0, 0, setRunningToFalse, "- quits");
 
-    std::string userName = "Jane Doe";
-    HayBCMD::CVARStorage::setCvar("user_name",
-        &userName,
+    int test1 = 690420;
+    HayBCMD::CVARStorage::setCvar("t_int",
+        &test1,
+        HayBCMD::CVARUtils::setInteger,
+        HayBCMD::CVARUtils::getInteger,
+        "- int"
+    );
+
+    float test2 = 32.64f;
+    HayBCMD::CVARStorage::setCvar("t_float",
+        &test2,
+        HayBCMD::CVARUtils::setFloat,
+        HayBCMD::CVARUtils::getFloat,
+        "- float"
+    );
+
+    short test3 = 25059;
+    HayBCMD::CVARStorage::setCvar("t_short",
+        &test3,
+        HayBCMD::CVARUtils::setShort,
+        HayBCMD::CVARUtils::getShort,
+        "- short"
+    );
+
+    unsigned short test4 = 53021;
+    HayBCMD::CVARStorage::setCvar("t_ushort",
+        &test4,
+        HayBCMD::CVARUtils::setUnsignedShort,
+        HayBCMD::CVARUtils::getUnsignedShort,
+        "- unsigned short"
+    );
+
+    unsigned char test5 = 69;
+    HayBCMD::CVARStorage::setCvar("t_uchar",
+        &test5,
+        HayBCMD::CVARUtils::setUnsignedChar,
+        HayBCMD::CVARUtils::getUnsignedChar,
+        "- unsigned char"
+    );
+
+    bool test6 = false;
+    HayBCMD::CVARStorage::setCvar("t_bool",
+        &test6,
+        HayBCMD::CVARUtils::setBoolean,
+        HayBCMD::CVARUtils::getBoolean,
+        "- bool"
+    );
+
+    std::string test7 = "Jane Doe";
+    HayBCMD::CVARStorage::setCvar("t_string",
+        &test7,
         HayBCMD::CVARUtils::setString,
         HayBCMD::CVARUtils::getString,
-        "- the name of the user :P");
+        "- string");
 
-    bool godmode = false, sendDieMessage = false;
-    
-    HayBCMD::CVARStorage::setCvar("godmode",
-        &godmode,
-        HayBCMD::CVARUtils::setBoolean,
-        HayBCMD::CVARUtils::getBoolean,
-        "- 1/0, whether is godmode or not"
-    );
-
-    HayBCMD::CVARStorage::setCvar("send_die_message",
-        &sendDieMessage,
-        HayBCMD::CVARUtils::setBoolean,
-        HayBCMD::CVARUtils::getBoolean,
-        "- 1/0, whether send die message or not"
-    );
-
-    HayBCMD::Command("+test", 0, 0, [](void*, const std::vector<std::string>&){
+    HayBCMD::Command::create("+test", 0, 0, [](void*, const std::vector<std::string>&){
         HayBCMD::Output::print(HayBCMD::ECHO, ":)\n");
     }, ":)");
 
-    HayBCMD::Command("-test", 0, 0, [](void*, const std::vector<std::string>&){
+    HayBCMD::Command::create("-test", 0, 0, [](void*, const std::vector<std::string>&){
         HayBCMD::Output::print(HayBCMD::ECHO, ":(\n");
     }, ":)");
 
