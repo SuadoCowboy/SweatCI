@@ -90,33 +90,35 @@ namespace HayBCMD {
 
     void Command::create(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage, void* pData) {
         for (const auto& c : commands) {
-            if (c->name == name) {
+            if (c.name == name) {
                 Output::printf(OutputLevel::ERROR, "command with name \"{}\" already exists\n", name);
                 return;
             }
         }
 
-        commands.push_back(new Command(name, minArgs, maxArgs, commandCallFunc, usage, pData));
+        commands.push_back(Command(name, minArgs, maxArgs, commandCallFunc, usage, pData));
     }
 
     Command::Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage, void* pData)
         : name(name), usage(usage), minArgs(minArgs), maxArgs(maxArgs),
         commandCallFunc(commandCallFunc), pData(pData) {}
 
-    Command* Command::getCommand(const std::string& name, bool printError) {
+    bool Command::getCommand(const std::string& name, Command& outCommand, bool printError) {
         for (auto &command : commands)
-            if (command->name == name) return command;
+            if (command.name == name) {
+                outCommand = command;
+                return true;
+            }
 
         if (printError)
             Output::printUnknownCommand(name);
 
-        return nullptr;
+        return false;
     }
 
     bool Command::deleteCommand(const std::string& commandName) {
         for (size_t i = 0; i < commands.size(); ++i)
-            if (commands[i]->name == commandName) {
-                delete commands[i];
+            if (commands[i].name == commandName) {
                 commands.erase(commands.begin() + i);
                 return true;
             }
@@ -124,7 +126,7 @@ namespace HayBCMD {
         return false;
     }
 
-    const std::vector<Command*>& Command::getCommands() {
+    const std::vector<Command>& Command::getCommands() {
         return commands;
     }
 
@@ -133,16 +135,14 @@ namespace HayBCMD {
     }
 
     void Command::clear() {
-        for (auto& command : commands)
-            delete command;
         commands.clear();
     }
 
     void Command::run(const std::vector<std::string>& args) {
-        commandCallFunc(pData, args);
+        commandCallFunc(pData, *this, args);
     }
 
-    std::vector<Command*> Command::commands;
+    std::vector<Command> Command::commands;
 
     void BaseCommands::init(std::unordered_map<std::string, std::string> *_variables) {
         variables = _variables;
@@ -158,28 +158,25 @@ namespace HayBCMD {
         Command::create("exec", 1, 1, exec, "- executes a .cfg file that contains HayBCMD script");
     }
 
-    void BaseCommands::help(void*, const std::vector<std::string>& args) {
-        Command* pCommand = Command::getCommand("help", false);
-
+    void BaseCommands::help(void*, Command& thisCommand, const std::vector<std::string>& args) {
         if (args.size() == 1) {
             // Print usage for a specific command
-            Command* command = Command::getCommand(args[0], true);
-            if (command != nullptr)
-                Command::printUsage(*(Command*)command);
-            return;
+            Command command;
+            if (Command::getCommand(args[0], command, true))
+                Command::printUsage(command);
         } else
-            Output::printf(OutputLevel::WARNING, "{} {} - see \"commands\" command to get a list of commands\n", pCommand->name, pCommand->usage);
+            Output::printf(OutputLevel::WARNING, "{} {} - see \"commands\" command to get a list of commands\n", thisCommand.name, thisCommand.usage);
     }
 
-    void BaseCommands::commands(void*, const std::vector<std::string>&) {
+    void BaseCommands::commands(void*, Command&, const std::vector<std::string>&) {
         std::stringstream out;
         for (auto& command : Command::getCommands())
-            out << command->name << " " << command->usage << "\n";
+            out << command.name << " " << command.usage << "\n";
 
         Output::print(OutputLevel::ECHO, out.str());
     }
 
-    void BaseCommands::echo(void*, const std::vector<std::string>& args) {
+    void BaseCommands::echo(void*, Command&, const std::vector<std::string>& args) {
         std::string message;
         for (const auto &arg : args) {
             message += arg;
@@ -187,7 +184,7 @@ namespace HayBCMD {
         Output::print(OutputLevel::ECHO, message + '\n');
     }
 
-    void BaseCommands::alias(void*, const std::vector<std::string>& args) {
+    void BaseCommands::alias(void*, Command&, const std::vector<std::string>& args) {
         if (args.size() == 1 && variables->count(args[0]) != 0) {
             variables->erase(args[0]);
             if (args[0].front() == '!') {
@@ -205,9 +202,12 @@ namespace HayBCMD {
             return;
         }
 
-        if (Command::getCommand(args[0], false)) {
-            Output::print(OutputLevel::ERROR, "varName is a command name, therefore this variable can not be created\n");
-            return;
+        {
+            Command command;
+            if (Command::getCommand(args[0], command, false)) {
+                Output::print(OutputLevel::ERROR, "varName is a command name, therefore this variable can not be created\n");
+                return;
+            }
         }
 
         std::regex whitespace_regex("\\S+");
@@ -224,7 +224,7 @@ namespace HayBCMD {
         (*variables)[args[0]] = args[1];
     }
 
-    void BaseCommands::getVariables(void*, const std::vector<std::string>&) {
+    void BaseCommands::getVariables(void*, Command&, const std::vector<std::string>&) {
         std::stringstream out;
 
         out << "amount of variables: " << variables->size();
@@ -234,7 +234,7 @@ namespace HayBCMD {
         Output::print(OutputLevel::ECHO, out.str()+'\n');
     }
 
-    void BaseCommands::variable(void*, const std::vector<std::string>& args) {
+    void BaseCommands::variable(void*, Command&, const std::vector<std::string>& args) {
         const std::string& key = args[0];
         auto it = variables->find(key);
         if (it == variables->end()) {
@@ -245,7 +245,7 @@ namespace HayBCMD {
         Output::print(OutputLevel::ECHO, key + " = \"" + it->second + "\"\n");
     }
 
-    void BaseCommands::incrementvar(void*, const std::vector<std::string>& args) {
+    void BaseCommands::incrementvar(void*, Command&, const std::vector<std::string>& args) {
         const std::string& variable = args[0];
         double minValue, maxValue, delta;
 
@@ -289,11 +289,11 @@ namespace HayBCMD {
         (*variables)[variable] = std::to_string(variableValue);
     }
 
-    void BaseCommands::exec(void*, const std::vector<std::string>& args) {
+    void BaseCommands::exec(void*, Command&, const std::vector<std::string>& args) {
         execConfigFile(args[0], *variables);
     }
 
-    std::unordered_map<std::string, std::string> *BaseCommands::variables;
+    std::unordered_map<std::string, std::string> *BaseCommands::variables = nullptr;
 
     Lexer::Lexer(const std::string& input) : input(input), position(0) {}
 
@@ -328,7 +328,7 @@ namespace HayBCMD {
     bool Lexer::isCommand(const std::string& commandName) {
         for (const auto &command : Command::getCommands()) {
 
-            if (command->name == commandName)
+            if (command.name == commandName)
                 return true;
         }
 
@@ -420,43 +420,36 @@ namespace HayBCMD {
     }
 
     void CVARStorage::setCvar(const std::string& name, void* pData, void(*set)(void *pData, const std::string &value), std::string (*toString)(void *pData), const std::string& usage) {
-        cvars[name] = {pData, set, toString};
-
-        Command::create(name, 0, 1, asCommand, usage);
-        
-        // after so much trouble I finally got it to work. But I don't know if that's the best method...
-        Command* pCommand = Command::getCommand(name, false); 
-        pCommand->pData = pCommand;
+        cvars[name] = {set, toString};
+        Command::create(name, 0, 1, asCommand, usage, pData);
     }
 
-    bool CVARStorage::getCvar(const std::string& name, CVariable*& buf) {
+    bool CVARStorage::getCvar(const std::string& name, CVariable& buf) {
         if (cvars.count(name) == 0)
             return false;
 
-        buf = &cvars[name];
+        buf = cvars[name];
         return true;
     }
 
-    void CVARStorage::asCommand(void* pData, const std::vector<std::string>& args) {
-        Command* pCommand = (Command*)pData;
-        
-        CVariable* buf = nullptr;
-        if (!getCvar(pCommand->name, buf)) {
-            HayBCMD::Output::printf(HayBCMD::ERROR, "Could not find \"{}\" in CVARs\n", pCommand->name);
+    void CVARStorage::asCommand(void*, Command& command, const std::vector<std::string>& args) {
+        CVariable cvar;
+        if (!getCvar(command.name, cvar)) {
+            HayBCMD::Output::printf(HayBCMD::ERROR, "\"{}\" CVAR not found", command.name);
             return;
-        };
+        }
 
         // if should print to output
         if (args.size() == 0) {
-            Output::printf(OutputLevel::ECHO, "{}\n", buf->toString(buf->pData));
+            Output::printf(OutputLevel::ECHO, "{}\n", cvar.toString(command.pData));
             return;
         }
 
         // if should set value
         try {
-            buf->set(buf->pData, args[0]);
+            cvar.set(command.pData, args[0]);
         } catch (...) {
-            Command::printUsage(*pCommand);
+            Command::printUsage(command);
         }
     }
 
@@ -517,9 +510,10 @@ namespace HayBCMD {
                             result += it->second; // add variable
                         
                         else { // search in cvars
-                            CVariable* buf;
-                            if (CVARStorage::getCvar(variable, buf))
-                                result += buf->toString(buf->pData);
+                            CVariable cvar;
+                            Command command;
+                            if (CVARStorage::getCvar(variable, cvar) && Command::getCommand(variable, command, false))
+                                result += cvar.toString(command.pData);
                             else
                                 result += "$" + variable; // or else just add with the $
                         }
@@ -551,8 +545,8 @@ namespace HayBCMD {
     void Parser::handleCommandToken() {
         std::string commandString = currentToken.getValue();
 
-        Command* command = Command::getCommand(commandString, true);
-        if (command == nullptr)
+        Command command;
+        if (!Command::getCommand(commandString, command, true))
             return;
 
         advance(); // skips the command token
@@ -560,7 +554,7 @@ namespace HayBCMD {
         std::vector<std::string> arguments = getArguments();
 
         // make it include whitespaces in that case
-        if (command->maxArgs == 1 && !arguments.empty()) {
+        if (command.maxArgs == 1 && !arguments.empty()) {
             std::string stringBuilder;
             for (const auto &argument : arguments) {
                 stringBuilder += argument + " ";
@@ -571,29 +565,29 @@ namespace HayBCMD {
         }
 
         // checks if arguments size is within the allowed
-        if (arguments.size() > (size_t)command->maxArgs || arguments.size() < (size_t)command->minArgs) {
-            Command::printUsage(*command);
+        if (arguments.size() > (size_t)command.maxArgs || arguments.size() < (size_t)command.minArgs) {
+            Command::printUsage(command);
             if (!arguments.empty())
-                Output::print(OutputLevel::ECHO, "arguments size must be within range [" + std::to_string(command->minArgs) + "," + std::to_string(command->maxArgs) + "], but size is " + std::to_string(arguments.size()) + '\n');
+                Output::print(OutputLevel::ECHO, "arguments size must be within range [" + std::to_string(command.minArgs) + "," + std::to_string(command.maxArgs) + "], but size is " + std::to_string(arguments.size()) + '\n');
             return;
         }
 
-        if (command->name[0] == '+') {
-            if (std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), command->name.substr(1)) != toggleTypesRunning.end())
+        if (command.name[0] == '+') {
+            if (std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), command.name.substr(1)) != toggleTypesRunning.end())
                 return;
             
-            toggleTypesRunning.push_back(command->name.substr(1));
+            toggleTypesRunning.push_back(command.name.substr(1));
         }
             
-        else if (command->name[0] == '-') {
-            auto it = std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), command->name.substr(1));
+        else if (command.name[0] == '-') {
+            auto it = std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), command.name.substr(1));
             if (it == toggleTypesRunning.end())
                 return;
             
             toggleTypesRunning.erase(it);
         }
 
-        command->run(arguments);
+        command.run(arguments);
     }
 
     bool Parser::handleSpecialAliases() {

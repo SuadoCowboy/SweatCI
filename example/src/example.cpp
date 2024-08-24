@@ -27,7 +27,7 @@ static void print(void*, const HayBCMD::OutputLevel& level, const std::string& m
 }
 
 bool running = true;
-void setRunningToFalse(void*, const std::vector<std::string>&) {
+void setRunningToFalse(void*, HayBCMD::Command&, const std::vector<std::string>&) {
     running = false;
 }
 
@@ -94,14 +94,6 @@ int main()
         HayBCMD::CVARUtils::setString,
         HayBCMD::CVARUtils::getString,
         "- string");
-
-    HayBCMD::Command::create("+test", 0, 0, [](void*, const std::vector<std::string>&){
-        HayBCMD::Output::print(HayBCMD::ECHO, ":)\n");
-    }, ":)");
-
-    HayBCMD::Command::create("-test", 0, 0, [](void*, const std::vector<std::string>&){
-        HayBCMD::Output::print(HayBCMD::ECHO, ":(\n");
-    }, ":)");
 
     while (running) {
         std::string input;
