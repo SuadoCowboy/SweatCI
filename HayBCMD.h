@@ -118,7 +118,7 @@ namespace HayBCMD {
     public:
         Command() {}
 
-        static void create(const std::string& name, unsigned char minArgs, unsigned char maxArgs,
+        Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs,
             CommandCall commandCallFunc, const std::string& usage, void* pData = nullptr);
         
         static bool getCommand(const std::string& name, Command& outCommand, bool printError);
@@ -145,9 +145,6 @@ namespace HayBCMD {
         void* pData = nullptr;
 
     private:
-        Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs,
-            CommandCall commandCallFunc, const std::string& usage, void* pData = nullptr);
-        
         static std::vector<Command> commands;
     };
 

@@ -88,7 +88,8 @@ namespace HayBCMD {
     PrintFunction Output::printFunc;
     void *Output::printFuncData;
 
-    void Command::create(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage, void* pData) {
+    Command::Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage, void* pData)
+      : name(name), usage(usage), minArgs(minArgs), maxArgs(maxArgs), commandCallFunc(commandCallFunc), pData(pData) {
         for (const auto& c : commands) {
             if (c.name == name) {
                 Output::printf(OutputLevel::ERROR, "command with name \"{}\" already exists\n", name);
@@ -96,12 +97,8 @@ namespace HayBCMD {
             }
         }
 
-        commands.push_back(Command(name, minArgs, maxArgs, commandCallFunc, usage, pData));
+        commands.emplace_back(*this);
     }
-
-    Command::Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage, void* pData)
-        : name(name), usage(usage), minArgs(minArgs), maxArgs(maxArgs),
-        commandCallFunc(commandCallFunc), pData(pData) {}
 
     bool Command::getCommand(const std::string& name, Command& outCommand, bool printError) {
         for (auto &command : commands)
@@ -148,14 +145,14 @@ namespace HayBCMD {
         variables = _variables;
 
         // Add commands
-        Command::create("help", 0, 1, help, "<command> - shows the usage of the command specified");
-        Command::create("commands", 0, 0, commands, "- shows a list of commands with their usages");
-        Command::create("echo", 1, 1, echo, "<message> - echoes a message to the console");
-        Command::create("alias", 1, 2, alias, "<var> <commands?> - creates/deletes variables");
-        Command::create("variables", 0, 0, getVariables, "- list of variables");
-        Command::create("variable", 1, 1, variable, "- shows variable value");
-        Command::create("incrementvar", 4, 4, incrementvar, "<var> <minValue> <maxValue> <delta> - increments the value of a variable");
-        Command::create("exec", 1, 1, exec, "- executes a .cfg file that contains HayBCMD script");
+        Command("help", 0, 1, help, "<command> - shows the usage of the command specified");
+        Command("commands", 0, 0, commands, "- shows a list of commands with their usages");
+        Command("echo", 1, 1, echo, "<message> - echoes a message to the console");
+        Command("alias", 1, 2, alias, "<var> <commands?> - creates/deletes variables");
+        Command("variables", 0, 0, getVariables, "- list of variables");
+        Command("variable", 1, 1, variable, "- shows variable value");
+        Command("incrementvar", 4, 4, incrementvar, "<var> <minValue> <maxValue> <delta> - increments the value of a variable");
+        Command("exec", 1, 1, exec, "- executes a .cfg file that contains HayBCMD script");
     }
 
     void BaseCommands::help(void*, Command& thisCommand, const std::vector<std::string>& args) {
@@ -421,7 +418,7 @@ namespace HayBCMD {
 
     void CVARStorage::setCvar(const std::string& name, void* pData, void(*set)(void *pData, const std::string &value), std::string (*toString)(void *pData), const std::string& usage) {
         cvars[name] = {set, toString};
-        Command::create(name, 0, 1, asCommand, usage, pData);
+        Command(name, 0, 1, asCommand, usage, pData);
     }
 
     bool CVARStorage::getCvar(const std::string& name, CVariable& buf) {

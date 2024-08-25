@@ -38,7 +38,7 @@ int main()
     std::unordered_map<std::string, std::string> variables{};
     HayBCMD::BaseCommands::init(&variables);
     
-    HayBCMD::Command::create("quit", 0, 0, setRunningToFalse, "- quits");
+    HayBCMD::Command("quit", 0, 0, setRunningToFalse, "- quits");
 
     int test1 = 690420;
     HayBCMD::CVARStorage::setCvar("t_int",
