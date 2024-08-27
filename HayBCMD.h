@@ -151,16 +151,15 @@ namespace HayBCMD {
     namespace BaseCommands {
         void init(std::unordered_map<std::string, std::string> *variables);
 
-        extern std::unordered_map<std::string, std::string> *variables;
-
         void help(void*, Command&, const std::vector<std::string>& args);
         void commands(void*, Command&, const std::vector<std::string>&);
         void echo(void*, Command&, const std::vector<std::string>& args);
-        void alias(void*, Command&, const std::vector<std::string>& args);
-        void getVariables(void*, Command&, const std::vector<std::string>&);
-        void variable(void*, Command&, const std::vector<std::string>& args);
-        void incrementvar(void*, Command&, const std::vector<std::string>& args);
-        void exec(void*, Command&, const std::vector<std::string>& args);
+        void alias(void* pData, Command&, const std::vector<std::string>& args);
+        void getVariables(void* pData, Command&, const std::vector<std::string>&);
+        void variable(void* pData, Command&, const std::vector<std::string>& args);
+        void incrementvar(void* pData, Command&, const std::vector<std::string>& args);
+        void exec(void* pData, Command&, const std::vector<std::string>& args);
+        void toggle(void* pData, Command&, const std::vector<std::string>& args);
     };
 
     class Lexer {

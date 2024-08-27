@@ -49,7 +49,7 @@ namespace HayBCMD {
     Token::Token() : type(NOTHING), value("") {}
     Token::~Token() {}
 
-    Token::Token(const HayBCMD::Token& other) : type(other.type), value(other.value) {}
+    Token::Token(const Token& other) : type(other.type), value(other.value) {}
 
     Token::Token(const TokenType& type, const std::string& value) : type(type), value(value) {}
 
@@ -141,18 +141,17 @@ namespace HayBCMD {
 
     std::vector<Command> Command::commands;
 
-    void BaseCommands::init(std::unordered_map<std::string, std::string> *_variables) {
-        variables = _variables;
-
+    void BaseCommands::init(std::unordered_map<std::string, std::string> *variables) {
         // Add commands
         Command("help", 0, 1, help, "<command> - shows the usage of the command specified");
         Command("commands", 0, 0, commands, "- shows a list of commands with their usages");
         Command("echo", 1, 1, echo, "<message> - echoes a message to the console");
-        Command("alias", 1, 2, alias, "<var> <commands?> - creates/deletes variables");
-        Command("variables", 0, 0, getVariables, "- list of variables");
-        Command("variable", 1, 1, variable, "- shows variable value");
-        Command("incrementvar", 4, 4, incrementvar, "<var> <minValue> <maxValue> <delta> - increments the value of a variable");
-        Command("exec", 1, 1, exec, "- executes a .cfg file that contains HayBCMD script");
+        Command("alias", 1, 2, alias, "<var> <commands?> - creates/deletes variables", variables);
+        Command("variables", 0, 0, getVariables, "- list of variables", variables);
+        Command("variable", 1, 1, variable, "- shows variable value", variables);
+        Command("incrementvar", 4, 4, incrementvar, "<var|cvar> <minValue> <maxValue> <delta> - increments the value of a variable", variables);
+        Command("exec", 1, 1, exec, "- executes a .cfg file that contains HayBCMD script", variables);
+        Command("toggle", 3, 3, toggle, "<var|cvar> <option1> <option2> - toggles value between option1 and option2", variables);
     }
 
     void BaseCommands::help(void*, Command& thisCommand, const std::vector<std::string>& args) {
@@ -174,14 +173,17 @@ namespace HayBCMD {
     }
 
     void BaseCommands::echo(void*, Command&, const std::vector<std::string>& args) {
-        std::string message;
-        for (const auto &arg : args) {
-            message += arg;
-        }
-        Output::print(OutputLevel::ECHO, message + '\n');
+        std::stringstream message;
+        for (const auto &arg : args)
+            message << arg;
+        message << "\n";
+
+        Output::print(OutputLevel::ECHO, message.str());
     }
 
-    void BaseCommands::alias(void*, Command&, const std::vector<std::string>& args) {
+    void BaseCommands::alias(void* pData, Command&, const std::vector<std::string>& args) {
+        auto variables = (std::unordered_map<std::string, std::string>*)pData;
+        
         if (args.size() == 1 && variables->count(args[0]) != 0) {
             variables->erase(args[0]);
             if (args[0].front() == '!') {
@@ -221,29 +223,34 @@ namespace HayBCMD {
         (*variables)[args[0]] = args[1];
     }
 
-    void BaseCommands::getVariables(void*, Command&, const std::vector<std::string>&) {
+    void BaseCommands::getVariables(void* pData, Command&, const std::vector<std::string>&) {
+        auto variables = (std::unordered_map<std::string, std::string>*)pData;
+
         std::stringstream out;
 
         out << "amount of variables: " << variables->size();
         for (const auto &pair : *variables)
             out << "\n" << pair.first << " = \"" << pair.second << "\"";
+        out << "\n";
 
-        Output::print(OutputLevel::ECHO, out.str()+'\n');
+        Output::print(OutputLevel::ECHO, out.str());
     }
 
-    void BaseCommands::variable(void*, Command&, const std::vector<std::string>& args) {
+    void BaseCommands::variable(void* pData, Command&, const std::vector<std::string>& args) {
+        auto variables = (std::unordered_map<std::string, std::string>*)pData;
+
         const std::string& key = args[0];
         auto it = variables->find(key);
         if (it == variables->end()) {
-            Output::print(OutputLevel::ERROR, "variable \"" + key + "\" does not exist\n");
+            Output::printf(OutputLevel::ERROR, "variable \"{}\" does not exist\n", key);
             return;
         }
 
-        Output::print(OutputLevel::ECHO, key + " = \"" + it->second + "\"\n");
+        Output::printf(OutputLevel::ECHO, "{} = \"{}\"\n", key, it->second);
     }
 
-    void BaseCommands::incrementvar(void*, Command&, const std::vector<std::string>& args) {
-        const std::string& variable = args[0];
+    void BaseCommands::incrementvar(void* pData, Command&, const std::vector<std::string>& args) {
+        auto variables = (std::unordered_map<std::string, std::string>*)pData;
         double minValue, maxValue, delta;
 
         try {
@@ -261,18 +268,44 @@ namespace HayBCMD {
             return;
         }
 
-        auto it = variables->find(variable);
+        // cvar
+        {
+            CVariable cvar;
+            Command cvarCommand;
+            if (CVARStorage::getCvar(args[0], cvar) && Command::getCommand(args[0], cvarCommand, false)) {
+                double variableValue;
+                try {
+                    variableValue = std::stod(cvar.toString(cvarCommand.pData));
+                } catch (...) {
+                    Output::printf(OutputLevel::ERROR, "variable \"{}\" does not contain a number", args[0]);
+                    return;
+                }
+
+                variableValue += delta;
+                if (variableValue > maxValue)
+                    variableValue = minValue;
+
+                else if (variableValue < minValue)
+                    variableValue = maxValue;
+                
+                cvar.set(cvarCommand.pData, std::to_string(variableValue));
+
+                return;
+            }
+        }
+
+        // var
+        auto it = variables->find(args[0]);
         if (it == variables->end()) {
-            Output::print(OutputLevel::ERROR, "unknown variable \"" + variable + "\"\n");
+            Output::printf(OutputLevel::ERROR, "unknown variable \"{}\"\n", args[0]);
             return;
         }
 
         double variableValue;
         try {
             variableValue = std::stod(it->second);
-        }
-        catch (...) {
-            Output::print(OutputLevel::ERROR, "variable value \"" + it->second + "\" is not a number");
+        } catch (...) {
+            Output::printf(OutputLevel::ERROR, "variable value \"{}\" is not a number", it->second);
             return;
         }
 
@@ -283,14 +316,44 @@ namespace HayBCMD {
         else if (variableValue < minValue)
             variableValue = maxValue;
 
-        (*variables)[variable] = std::to_string(variableValue);
+        it->second = std::to_string(variableValue);
     }
 
-    void BaseCommands::exec(void*, Command&, const std::vector<std::string>& args) {
-        execConfigFile(args[0], *variables);
+    void BaseCommands::exec(void* pData, Command&, const std::vector<std::string>& args) {
+        auto variables = *(std::unordered_map<std::string, std::string>*)pData;
+        execConfigFile(args[0], variables);
     }
 
-    std::unordered_map<std::string, std::string> *BaseCommands::variables = nullptr;
+    void BaseCommands::toggle(void* pData, Command&, const std::vector<std::string>& args) {
+        auto variables = (std::unordered_map<std::string, std::string>*)pData;
+
+        // CVAR
+        {
+            CVariable cvar;
+            Command cvarCommand;
+            if (CVARStorage::getCvar(args[0], cvar) && Command::getCommand(args[0], cvarCommand, false)) {
+                std::string asString = cvar.toString(cvarCommand.pData);
+                if (asString == args[1])
+                    cvar.set(cvarCommand.pData, args[2]);
+                else
+                    cvar.set(cvarCommand.pData, args[1]);
+
+                return;
+            }
+        }
+        
+        // var
+        auto it = variables->find(args[0]);
+        if (it == variables->end()) {
+            Output::printf(OutputLevel::ERROR, "unknown variable \"{}\"\n", args[0]);
+            return;
+        }
+
+        if (it->second == args[1])
+            it->second = args[2];
+        else
+            it->second = args[1];
+    }
 
     Lexer::Lexer(const std::string& input) : input(input), position(0) {}
 
@@ -432,7 +495,7 @@ namespace HayBCMD {
     void CVARStorage::asCommand(void*, Command& command, const std::vector<std::string>& args) {
         CVariable cvar;
         if (!getCvar(command.name, cvar)) {
-            HayBCMD::Output::printf(HayBCMD::ERROR, "\"{}\" CVAR not found", command.name);
+            Output::printf(ERROR, "\"{}\" CVAR not found", command.name);
             return;
         }
 

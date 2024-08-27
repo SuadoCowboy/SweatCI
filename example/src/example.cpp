@@ -4,6 +4,16 @@
 
 #include "HayBCMD.h"
 
+std::unordered_map<std::string, std::string> variables;
+
+int test1 = 690420;
+float test2 = 32.64f;
+short test3 = 25059;
+unsigned short test4 = 53021;
+unsigned char test5 = 69;
+bool test6 = false;
+std::string test7 = "Jane Doe";
+
 static std::string outputLevelToString(const HayBCMD::OutputLevel &level) {
     switch (level) {
     case HayBCMD::OutputLevel::DEFAULT:
@@ -27,20 +37,16 @@ static void print(void*, const HayBCMD::OutputLevel& level, const std::string& m
 }
 
 bool running = true;
-void setRunningToFalse(void*, HayBCMD::Command&, const std::vector<std::string>&) {
+static void setRunningToFalse(void*, HayBCMD::Command&, const std::vector<std::string>&) {
     running = false;
 }
 
-int main()
-{
+static void init() {
     HayBCMD::Output::setPrintFunction(nullptr, print);
-
-    std::unordered_map<std::string, std::string> variables{};
     HayBCMD::BaseCommands::init(&variables);
-    
+
     HayBCMD::Command("quit", 0, 0, setRunningToFalse, "- quits");
 
-    int test1 = 690420;
     HayBCMD::CVARStorage::setCvar("t_int",
         &test1,
         HayBCMD::CVARUtils::setInteger,
@@ -48,7 +54,6 @@ int main()
         "- int"
     );
 
-    float test2 = 32.64f;
     HayBCMD::CVARStorage::setCvar("t_float",
         &test2,
         HayBCMD::CVARUtils::setFloat,
@@ -56,7 +61,6 @@ int main()
         "- float"
     );
 
-    short test3 = 25059;
     HayBCMD::CVARStorage::setCvar("t_short",
         &test3,
         HayBCMD::CVARUtils::setShort,
@@ -64,7 +68,6 @@ int main()
         "- short"
     );
 
-    unsigned short test4 = 53021;
     HayBCMD::CVARStorage::setCvar("t_ushort",
         &test4,
         HayBCMD::CVARUtils::setUnsignedShort,
@@ -72,7 +75,6 @@ int main()
         "- unsigned short"
     );
 
-    unsigned char test5 = 69;
     HayBCMD::CVARStorage::setCvar("t_uchar",
         &test5,
         HayBCMD::CVARUtils::setUnsignedChar,
@@ -80,7 +82,6 @@ int main()
         "- unsigned char"
     );
 
-    bool test6 = false;
     HayBCMD::CVARStorage::setCvar("t_bool",
         &test6,
         HayBCMD::CVARUtils::setBoolean,
@@ -88,12 +89,17 @@ int main()
         "- bool"
     );
 
-    std::string test7 = "Jane Doe";
     HayBCMD::CVARStorage::setCvar("t_string",
         &test7,
         HayBCMD::CVARUtils::setString,
         HayBCMD::CVARUtils::getString,
         "- string");
+}
+
+int main()
+{
+    variables = {};
+    init();
 
     while (running) {
         std::string input;
