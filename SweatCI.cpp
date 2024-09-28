@@ -22,13 +22,13 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "HayBCMD.h"
+#include "SweatCI.h"
 
 #include <regex>
 #include <algorithm>
 #include <fstream>
 
-namespace HayBCMD {
+namespace SweatCI {
     std::string tokenTypeToString(const TokenType& type) {
         switch (type) {
         case STRING:
@@ -150,7 +150,7 @@ namespace HayBCMD {
         Command("variables", 0, 0, getVariables, "- list of variables", variables);
         Command("variable", 1, 1, variable, "- shows variable value", variables);
         Command("incrementvar", 4, 4, incrementvar, "<var|cvar> <minValue> <maxValue> <delta> - increments the value of a variable", variables);
-        Command("exec", 1, 1, exec, "- executes a .cfg file that contains HayBCMD script", variables);
+        Command("exec", 1, 1, exec, "- executes a .cfg file that contains SweatCI script", variables);
         Command("toggle", 3, 3, toggle, "<var|cvar> <option1> <option2> - toggles value between option1 and option2", variables);
     }
 

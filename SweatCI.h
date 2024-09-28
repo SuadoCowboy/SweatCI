@@ -28,7 +28,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace HayBCMD {
+namespace SweatCI {
     enum TokenType {
         NOTHING = 0,
         STRING,

@@ -2,7 +2,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "HayBCMD.h"
+#include "SweatCI.h"
 
 std::unordered_map<std::string, std::string> variables;
 
@@ -14,85 +14,85 @@ unsigned char test5 = 69;
 bool test6 = false;
 std::string test7 = "Jane Doe";
 
-static std::string outputLevelToString(const HayBCMD::OutputLevel &level) {
+static std::string outputLevelToString(const SweatCI::OutputLevel &level) {
     switch (level) {
-    case HayBCMD::OutputLevel::DEFAULT:
+    case SweatCI::OutputLevel::DEFAULT:
         return "DEFAULT";
     
-    case HayBCMD::OutputLevel::ECHO:
+    case SweatCI::OutputLevel::ECHO:
         return "ECHO";
     
-    case HayBCMD::OutputLevel::WARNING:
+    case SweatCI::OutputLevel::WARNING:
         return "WARNING";
     
-    case HayBCMD::OutputLevel::ERROR:
+    case SweatCI::OutputLevel::ERROR:
         return "ERROR";
     };
 
     return "UNKNOWN";
 }
 
-static void print(void*, const HayBCMD::OutputLevel& level, const std::string& message) {
+static void print(void*, const SweatCI::OutputLevel& level, const std::string& message) {
     std::cout << outputLevelToString(level) << ": " << message;
 }
 
 bool running = true;
-static void setRunningToFalse(void*, HayBCMD::Command&, const std::vector<std::string>&) {
+static void setRunningToFalse(void*, SweatCI::Command&, const std::vector<std::string>&) {
     running = false;
 }
 
 static void init() {
-    HayBCMD::Output::setPrintFunction(nullptr, print);
-    HayBCMD::BaseCommands::init(&variables);
+    SweatCI::Output::setPrintFunction(nullptr, print);
+    SweatCI::BaseCommands::init(&variables);
 
-    HayBCMD::Command("quit", 0, 0, setRunningToFalse, "- quits");
+    SweatCI::Command("quit", 0, 0, setRunningToFalse, "- quits");
 
-    HayBCMD::CVARStorage::setCvar("t_int",
+    SweatCI::CVARStorage::setCvar("t_int",
         &test1,
-        HayBCMD::CVARUtils::setInteger,
-        HayBCMD::CVARUtils::getInteger,
+        SweatCI::CVARUtils::setInteger,
+        SweatCI::CVARUtils::getInteger,
         "- int"
     );
 
-    HayBCMD::CVARStorage::setCvar("t_float",
+    SweatCI::CVARStorage::setCvar("t_float",
         &test2,
-        HayBCMD::CVARUtils::setFloat,
-        HayBCMD::CVARUtils::getFloat,
+        SweatCI::CVARUtils::setFloat,
+        SweatCI::CVARUtils::getFloat,
         "- float"
     );
 
-    HayBCMD::CVARStorage::setCvar("t_short",
+    SweatCI::CVARStorage::setCvar("t_short",
         &test3,
-        HayBCMD::CVARUtils::setShort,
-        HayBCMD::CVARUtils::getShort,
+        SweatCI::CVARUtils::setShort,
+        SweatCI::CVARUtils::getShort,
         "- short"
     );
 
-    HayBCMD::CVARStorage::setCvar("t_ushort",
+    SweatCI::CVARStorage::setCvar("t_ushort",
         &test4,
-        HayBCMD::CVARUtils::setUnsignedShort,
-        HayBCMD::CVARUtils::getUnsignedShort,
+        SweatCI::CVARUtils::setUnsignedShort,
+        SweatCI::CVARUtils::getUnsignedShort,
         "- unsigned short"
     );
 
-    HayBCMD::CVARStorage::setCvar("t_uchar",
+    SweatCI::CVARStorage::setCvar("t_uchar",
         &test5,
-        HayBCMD::CVARUtils::setUnsignedChar,
-        HayBCMD::CVARUtils::getUnsignedChar,
+        SweatCI::CVARUtils::setUnsignedChar,
+        SweatCI::CVARUtils::getUnsignedChar,
         "- unsigned char"
     );
 
-    HayBCMD::CVARStorage::setCvar("t_bool",
+    SweatCI::CVARStorage::setCvar("t_bool",
         &test6,
-        HayBCMD::CVARUtils::setBoolean,
-        HayBCMD::CVARUtils::getBoolean,
+        SweatCI::CVARUtils::setBoolean,
+        SweatCI::CVARUtils::getBoolean,
         "- bool"
     );
 
-    HayBCMD::CVARStorage::setCvar("t_string",
+    SweatCI::CVARStorage::setCvar("t_string",
         &test7,
-        HayBCMD::CVARUtils::setString,
-        HayBCMD::CVARUtils::getString,
+        SweatCI::CVARUtils::setString,
+        SweatCI::CVARUtils::getString,
         "- string");
 }
 
@@ -105,9 +105,9 @@ int main()
         std::string input;
         std::getline(std::cin, input);
 
-        HayBCMD::Lexer lexer = input;
-        HayBCMD::Parser(&lexer, variables).parse();
+        SweatCI::Lexer lexer = input;
+        SweatCI::Parser(&lexer, variables).parse();
         
-        HayBCMD::handleLoopAliasesRunning(variables);
+        SweatCI::handleLoopAliasesRunning(variables);
     }
 }

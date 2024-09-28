@@ -1,5 +1,5 @@
-# Meet HayBCMD
-HayBCMD is a interpreter **highly** inspired by the console interpreter in games like Half-Life 2, Team Fortress 2(which are both made in the Source Engine) and DDNet(or Teeworlds but I did not play that version)
+# Meet SweatCI
+SweatCI is a command interpreter **highly** inspired by the console interpreter in games like Half-Life 2, Team Fortress 2(which are both made in the Source Engine) and DDNet(or Teeworlds but I did not play that version)
 
 # How aliases works
 ```cpp
