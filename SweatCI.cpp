@@ -184,7 +184,12 @@ namespace SweatCI {
     void BaseCommands::alias(void* pData, Command&, const std::vector<std::string>& args) {
         auto variables = (std::unordered_map<std::string, std::string>*)pData;
         
-        if (args.size() == 1 && variables->count(args[0]) != 0) {
+        if (args.size() == 1) {
+            if (variables->count(args[0]) == 0) {
+                SweatCI::Output::printf(SweatCI::ERROR, "\"{}\" variable not found\n", args[0]);
+                return;
+            }
+
             variables->erase(args[0]);
             if (args[0].front() == '!') {
                 auto it = std::find(loopAliasesRunning.begin(), loopAliasesRunning.end(), args[0]);
