@@ -72,7 +72,7 @@ namespace SweatCI {
         return "Token(" + tokenTypeToString(type) + ", \"" + value + "\")";
     }
 
-    void Output::setPrintFunction(void *pData, PrintFunction _printFunc) {
+    void Output::setPrintFunction(void* pData, PrintFunction _printFunc) {
         printFunc = _printFunc;
         printFuncData = pData;
     }
@@ -86,7 +86,7 @@ namespace SweatCI {
     }
 
     PrintFunction Output::printFunc;
-    void *Output::printFuncData;
+    void*Output::printFuncData;
 
     Command::Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage, void* pData)
       : name(name), usage(usage), minArgs(minArgs), maxArgs(maxArgs), commandCallFunc(commandCallFunc), pData(pData) {
@@ -258,33 +258,23 @@ namespace SweatCI {
         auto variables = (std::unordered_map<std::string, std::string>*)pData;
         double minValue, maxValue, delta;
 
-        try {
-            minValue = std::stod(args[1]);
-            maxValue = std::stod(args[2]);
-            delta = std::stod(args[3]);
-        }
-        catch (...) {
-            Output::print(OutputLevel::ERROR, "one of the variables is not a number");
+        if (!Utils::Command::getDouble(args[1], minValue) ||
+            !Utils::Command::getDouble(args[2], maxValue) ||
+            !Utils::Command::getDouble(args[3], delta))
             return;
-        }
 
         if (minValue > maxValue) {
             Output::print(OutputLevel::ERROR, "minValue is higher than maxValue");
             return;
         }
 
-        // cvar
-        {
+        { // cvar
             CVariable cvar;
             Command cvarCommand;
             if (CVARStorage::getCvar(args[0], cvar) && Command::getCommand(args[0], cvarCommand, false)) {
                 double variableValue;
-                try {
-                    variableValue = std::stod(cvar.toString(cvarCommand.pData));
-                } catch (...) {
-                    Output::printf(OutputLevel::ERROR, "variable \"{}\" does not contain a number", args[0]);
+                if (!Utils::Command::getDouble(cvar.toString(cvarCommand.pData), variableValue))
                     return;
-                }
 
                 variableValue += delta;
                 if (variableValue > maxValue)
@@ -293,7 +283,7 @@ namespace SweatCI {
                 else if (variableValue < minValue)
                     variableValue = maxValue;
                 
-                cvar.set(cvarCommand.pData, std::to_string(variableValue));
+                cvar.set(cvarCommand.pData, numberToString(variableValue));
 
                 return;
             }
@@ -307,12 +297,8 @@ namespace SweatCI {
         }
 
         double variableValue;
-        try {
-            variableValue = std::stod(it->second);
-        } catch (...) {
-            Output::printf(OutputLevel::ERROR, "variable value \"{}\" is not a number", it->second);
+        if (!Utils::Command::getDouble(it->second, variableValue))
             return;
-        }
 
         variableValue += delta;
         if (variableValue > maxValue)
@@ -321,7 +307,7 @@ namespace SweatCI {
         else if (variableValue < minValue)
             variableValue = maxValue;
 
-        it->second = std::to_string(variableValue);
+        it->second = numberToString(variableValue);
     }
 
     void BaseCommands::exec(void* pData, Command&, const std::vector<std::string>& args) {
@@ -332,12 +318,12 @@ namespace SweatCI {
     void BaseCommands::toggle(void* pData, Command&, const std::vector<std::string>& args) {
         auto variables = (std::unordered_map<std::string, std::string>*)pData;
 
-        // CVAR
-        {
+        { // CVAR
             CVariable cvar;
             Command cvarCommand;
             if (CVARStorage::getCvar(args[0], cvar) && Command::getCommand(args[0], cvarCommand, false)) {
                 std::string asString = cvar.toString(cvarCommand.pData);
+
                 if (asString == args[1])
                     cvar.set(cvarCommand.pData, args[2]);
                 else
@@ -440,51 +426,73 @@ namespace SweatCI {
         return Token(TokenType::STRING, tokenValue);
     }
 
-    void CVARUtils::setString(void *pData, const std::string& value) {
+    void Utils::Cvar::setString(void* pData, const std::string& value) {
         *(std::string*)pData = value;
     }
 
-    std::string CVARUtils::getString(void *pData) {
+    std::string Utils::Cvar::getString(void* pData) {
         return *(std::string*)pData;
     }
 
-    void CVARUtils::setBoolean(void *pData, const std::string& value) {
+    void Utils::Cvar::setBoolean(void* pData, const std::string& value) {
         try {
             if (std::stoi(value) <= 0) *(bool*)pData = false;
             else *(bool*)pData = true;
         } catch (...) {return;}
     }
 
-    std::string CVARUtils::getBoolean(void *pData) {
+    std::string Utils::Cvar::getBoolean(void* pData) {
         return std::to_string(*(bool*)pData);
     }
 
 #define _MAKE_CVARUTILS_NUMBER_FUNCTIONS(type, convertFunc, setFuncName, getFuncName) \
-    void CVARUtils::setFuncName (void *pData, const std::string &value) { \
+    void Utils::Cvar::setFuncName(void* pData, const std::string& value) { \
         try { \
             *(type*)pData = convertFunc(value); \
         } catch (...) {return;} \
     } \
-    std::string CVARUtils::getFuncName (void *pData) { \
-        return std::to_string(*(type*)pData); \
+    std::string Utils::Cvar::getFuncName(void* pData) { \
+        return numberToString(*(type*)pData); \
     }
 
     _MAKE_CVARUTILS_NUMBER_FUNCTIONS(float, std::stof, setFloat, getFloat);
     _MAKE_CVARUTILS_NUMBER_FUNCTIONS(int, std::stoi, setInteger, getInteger);
     _MAKE_CVARUTILS_NUMBER_FUNCTIONS(short, (short)std::stoi, setShort, getShort);
     _MAKE_CVARUTILS_NUMBER_FUNCTIONS(unsigned short, (unsigned short)std::stoi, setUnsignedShort, getUnsignedShort);
+    _MAKE_CVARUTILS_NUMBER_FUNCTIONS(unsigned char, (unsigned char)std::stoi, setUnsignedChar, getUnsignedChar);
 
-    void CVARUtils::setUnsignedChar(void *pData, const std::string &value) {
+    bool Utils::Command::getBoolean(const std::string& str, bool& out) {
         try {
-            *(unsigned char*)pData = (unsigned char)std::stoi(value);
-        } catch (...) {return;}
+            int i = std::stoi(str);
+            if (i <= 0) out = false;
+            else out = true;
+
+            return true;
+        } catch (...) {
+            Output::printf(ERROR, "\"{}\" is not a boolean\n", str);
+            return false;
+        }
     }
 
-    std::string CVARUtils::getUnsignedChar(void *pData) {
-        return std::to_string(short(*(unsigned char*)pData));
-    }
+#define _MAKE_COMMANDUTILS_FUNCTIONS(type, convertFunc, getFuncName, wrongTypeFmt) \
+    bool Utils::Command::getFuncName(const std::string& str, type& out) { \
+        try { \
+            out = convertFunc(str); \
+            return true; \
+        }  catch (...) { \
+            Output::printf(ERROR, wrongTypeFmt, str); \
+            return false; \
+        } \
+    } \
 
-    void CVARStorage::setCvar(const std::string& name, void* pData, void(*set)(void *pData, const std::string &value), std::string (*toString)(void *pData), const std::string& usage) {
+    _MAKE_COMMANDUTILS_FUNCTIONS(float, std::stof, getFloat, "\"{}\" is not a float\n");
+    _MAKE_COMMANDUTILS_FUNCTIONS(double, std::stod, getDouble, "\"{}\" is not a double\n");
+    _MAKE_COMMANDUTILS_FUNCTIONS(int, std::stoi, getInteger, "\"{}\" is not a integer\n");
+    _MAKE_COMMANDUTILS_FUNCTIONS(short, (short)std::stoi, getShort, "\"{}\" is not a short\n");
+    _MAKE_COMMANDUTILS_FUNCTIONS(unsigned short, (unsigned short)std::stoi, getUnsignedShort, "\"{}\" is not a unsigned short\n");
+    _MAKE_COMMANDUTILS_FUNCTIONS(unsigned char, (unsigned char)std::stoi, getUnsignedChar, "\"{}\" is not a unsigned char\n");
+
+    void CVARStorage::setCvar(const std::string& name, void* pData, void(*set)(void* pData, const std::string& value), std::string (*toString)(void* pData), const std::string& usage) {
         cvars[name] = {set, toString};
         Command(name, 0, 1, asCommand, usage, pData);
     }

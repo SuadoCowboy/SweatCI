@@ -49,50 +49,50 @@ static void init() {
 
     SweatCI::CVARStorage::setCvar("t_int",
         &test1,
-        SweatCI::CVARUtils::setInteger,
-        SweatCI::CVARUtils::getInteger,
+        SweatCI::Utils::Cvar::setInteger,
+        SweatCI::Utils::Cvar::getInteger,
         "- int"
     );
 
     SweatCI::CVARStorage::setCvar("t_float",
         &test2,
-        SweatCI::CVARUtils::setFloat,
-        SweatCI::CVARUtils::getFloat,
+        SweatCI::Utils::Cvar::setFloat,
+        SweatCI::Utils::Cvar::getFloat,
         "- float"
     );
 
     SweatCI::CVARStorage::setCvar("t_short",
         &test3,
-        SweatCI::CVARUtils::setShort,
-        SweatCI::CVARUtils::getShort,
+        SweatCI::Utils::Cvar::setShort,
+        SweatCI::Utils::Cvar::getShort,
         "- short"
     );
 
     SweatCI::CVARStorage::setCvar("t_ushort",
         &test4,
-        SweatCI::CVARUtils::setUnsignedShort,
-        SweatCI::CVARUtils::getUnsignedShort,
+        SweatCI::Utils::Cvar::setUnsignedShort,
+        SweatCI::Utils::Cvar::getUnsignedShort,
         "- unsigned short"
     );
 
     SweatCI::CVARStorage::setCvar("t_uchar",
         &test5,
-        SweatCI::CVARUtils::setUnsignedChar,
-        SweatCI::CVARUtils::getUnsignedChar,
+        SweatCI::Utils::Cvar::setUnsignedChar,
+        SweatCI::Utils::Cvar::getUnsignedChar,
         "- unsigned char"
     );
 
     SweatCI::CVARStorage::setCvar("t_bool",
         &test6,
-        SweatCI::CVARUtils::setBoolean,
-        SweatCI::CVARUtils::getBoolean,
+        SweatCI::Utils::Cvar::setBoolean,
+        SweatCI::Utils::Cvar::getBoolean,
         "- bool"
     );
 
     SweatCI::CVARStorage::setCvar("t_string",
         &test7,
-        SweatCI::CVARUtils::setString,
-        SweatCI::CVARUtils::getString,
+        SweatCI::Utils::Cvar::setString,
+        SweatCI::Utils::Cvar::getString,
         "- string");
 }
 

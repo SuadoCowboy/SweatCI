@@ -92,7 +92,7 @@ namespace SweatCI {
         ERROR, // anything that went wrong
     };
 
-    typedef void(*PrintFunction)(void *pData, const OutputLevel& level, const std::string& message);
+    typedef void(*PrintFunction)(void* pData, const OutputLevel& level, const std::string& message);
 
     class Output {
     public:
@@ -102,12 +102,12 @@ namespace SweatCI {
         }
 
         static void print(const OutputLevel& level, const std::string& str);
-        static void setPrintFunction(void *pData, PrintFunction printFunc);
+        static void setPrintFunction(void* pData, PrintFunction printFunc);
         static void printUnknownCommand(const std::string& command);
 
     private:
         static PrintFunction printFunc;
-        static void *printFuncData;
+        static void* printFuncData;
     };
 
     class Command;
@@ -179,32 +179,53 @@ namespace SweatCI {
         Token lastToken;
     };
 
-    namespace CVARUtils {
-        void setString(void *pData, const std::string& value);
-        std::string getString(void *pData);
+    template<typename T>
+    std::string numberToString(T value) {
+        std::string str = std::to_string(value);
+        str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+        str.erase(str.find_last_not_of('.') + 1, std::string::npos);
 
-        void setBoolean(void *pData, const std::string& value);
-        std::string getBoolean(void *pData);
+        return str;
+    }
 
-        void setFloat(void *pData, const std::string& value);
-        std::string getFloat(void *pData);
+    namespace Utils {
+        namespace Command {
+            bool getBoolean(const std::string& str, bool& out);
+            bool getFloat(const std::string& str, float& out);
+            bool getDouble(const std::string& str, double& out);
+            bool getInteger(const std::string& str, int& out);
+            bool getShort(const std::string& str, short& out);
+            bool getUnsignedShort(const std::string& str, unsigned short& out);
+            bool getUnsignedChar(const std::string& str, unsigned char& out);
+        }
+    
+        namespace Cvar {
+            void setString(void* pData, const std::string& value);
+            std::string getString(void* pData);
 
-        void setInteger(void *pData, const std::string& value);
-        std::string getInteger(void *pData);
+            void setBoolean(void* pData, const std::string& value);
+            std::string getBoolean(void* pData);
 
-        void setShort(void *pData, const std::string& value);
-        std::string getShort(void *pData);
+            void setFloat(void* pData, const std::string& value);
+            std::string getFloat(void* pData);
 
-        void setUnsignedShort(void *pData, const std::string& value);
-        std::string getUnsignedShort(void *pData);
+            void setInteger(void* pData, const std::string& value);
+            std::string getInteger(void* pData);
 
-        void setUnsignedChar(void *pData, const std::string& value);
-        std::string getUnsignedChar(void *pData);
+            void setShort(void* pData, const std::string& value);
+            std::string getShort(void* pData);
+
+            void setUnsignedShort(void* pData, const std::string& value);
+            std::string getUnsignedShort(void* pData);
+
+            void setUnsignedChar(void* pData, const std::string& value);
+            std::string getUnsignedChar(void* pData);
+        }
     }
 
     struct CVariable {
-        void (*set)(void *pData, const std::string &value);
-        std::string (*toString)(void *pData);
+        void (*set)(void* pData, const std::string& value);
+        std::string (*toString)(void* pData);
     };
 
     class CVARStorage {
@@ -212,7 +233,7 @@ namespace SweatCI {
         /// @param set to convert a string into the same type and set the new value
         /// @param toString get the cvar value as string
         /// @param usage to be printed out to the console if the user uses help command in it
-        static void setCvar(const std::string& name, void* pData, void(*set)(void *pData, const std::string &value), std::string (*toString)(void *pData), const std::string& usage);
+        static void setCvar(const std::string& name, void* pData, void(*set)(void* pData, const std::string& value), std::string (*toString)(void* pData), const std::string& usage);
 
         /// @brief Searches for the CVAR and returns it to a buffer
         /// @return false if could not get cvar
