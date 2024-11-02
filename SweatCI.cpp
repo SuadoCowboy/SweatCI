@@ -396,6 +396,7 @@ namespace SweatCI {
             position++;
         }
 
+		// TODO: wtf is that "x == Nothing || x != Command"????? Why not just "x != Command"???
         if (isCommand(tokenValue) && (lastToken.getType() == TokenType::NOTHING || lastToken.getType() != TokenType::COMMAND))
             return Token(TokenType::COMMAND, tokenValue);
         else
