@@ -13,14 +13,11 @@ project(SweatCI VERSION 0.2.0 LANGUAGES CXX)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
-# https://stackoverflow.com/questions/2152077/is-it-possible-to-get-cmake-to-build-both-a-static-and-shared-library-at-the-sam
-add_library(objlib OBJECT SweatCI.cpp)
-
 if(BUILD_SHARED_LIBS)
-    add_library(SweatCI SHARED $<TARGET_OBJECTS:objlib>)
+    add_library(SweatCI SHARED SweatCI.cpp)
     set_target_properties(SweatCI PROPERTIES VERSION ${PROJECT_VERSION} POSITION_INDEPENDENT_CODE 1)
 else()
-    add_library(SweatCI STATIC $<TARGET_OBJECTS:objlib>)
+    add_library(SweatCI STATIC SweatCI.cpp)
 endif()
 
 target_include_directories(SweatCI PRIVATE ${PROJECT_SOURCE_DIR}) # SweatCI.h
