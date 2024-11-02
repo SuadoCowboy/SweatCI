@@ -366,7 +366,7 @@ namespace SweatCI {
             currentChar = input[position];
         }
 
-        if (input[position] == ';') {
+        if (input[position] == ';' && (position == 0 || input[position-1] != '\\')) {
             position++;
             lastToken = Token(TokenType::EOS, ";");
             return lastToken;
@@ -799,7 +799,7 @@ namespace SweatCI {
                     removeOneFromIndex = false;
                 }
 
-                if (line[i] == '*' && line.size()-1 != i) {
+                if (!inQuotes && line[i] == '*' && line.size()-1 != i) {
                     if (line[i+1] != '/') continue;
 
                     if (inComment) {
@@ -819,6 +819,13 @@ namespace SweatCI {
 
                 if (inComment) continue;
 
+                if (line[i] == '"') {
+                    inQuotes = not inQuotes;
+                    continue;
+                }
+
+                if (inQuotes) continue;
+
                 if (line[i] == '/' && line.size()-1 != i) {
                     if (line[i+1] == '*') {
                         inComment = true;
@@ -837,6 +844,12 @@ namespace SweatCI {
                 content << line;
             if (!inQuotes)
                 content << ';';
+            /*
+            if (inQuotes)
+                content << ' ';
+            else
+                content << ';';
+            */
         }
 
         Lexer lexer{content.str()};
