@@ -784,17 +784,59 @@ namespace SweatCI {
             return;
         }
 
+        bool inComment = false;
+        bool inQuotes = false;
+        bool removeOneFromIndex = false;
+
         std::stringstream content;
         while (file.good()) {
             std::string line;
             std::getline(file, line);
+
             for (size_t i = 0; i < line.size(); ++i) {
-                if (line[i] == '/' && line.size()-1 != i && line[i+1] == '/') {
-                    line = line.substr(0, i);
-                    break;
+                if (removeOneFromIndex) {
+                    --i;
+                    removeOneFromIndex = false;
+                }
+
+                if (line[i] == '*' && line.size()-1 != i) {
+                    if (line[i+1] != '/') continue;
+
+                    if (inComment) {
+                        inComment = false;
+                        line = line.substr(i+2);
+                        i = 0;
+                        removeOneFromIndex = true;
+                    } else { // comment everything before and above
+                        content.str(std::string());
+                        line = line.substr(i+2);
+                        i = 0;
+                        removeOneFromIndex = true;
+                    }
+                
+                    continue;
+                }
+
+                if (inComment) continue;
+
+                if (line[i] == '/' && line.size()-1 != i) {
+                    if (line[i+1] == '*') {
+                        inComment = true;
+                        content << line.substr(0, i);
+                        i = 0;
+                        removeOneFromIndex = true;
+                        continue;
+                    } else if (line[i+1] == '/') {
+                        line = line.substr(0, i);
+                        break;
+                    }
                 }
             }
-            content << line << ";";
+
+            if (!inComment)
+                content << line;
+            if (!inQuotes)
+                content << ';';
         }
 
         Lexer lexer{content.str()};
