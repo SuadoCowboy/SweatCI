@@ -819,7 +819,7 @@ namespace SweatCI {
 
                 if (inComment) continue;
 
-                if (line[i] == '"') {
+                if (line[i] == '"' && (i == 0 || line[i-1] != '\\')) {
                     inQuotes = not inQuotes;
                     continue;
                 }
