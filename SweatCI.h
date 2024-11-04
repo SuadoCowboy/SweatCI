@@ -264,7 +264,7 @@ namespace SweatCI {
         void advanceUntil(const std::vector<TokenType>& tokenTypes);
         void handleCommandToken();
         /// @return true if should execute alias
-        bool handleSpecialAliases();
+        bool isSpecialAlias();
         void handleAliasLexer(const std::string& input);
 
         Token currentToken;

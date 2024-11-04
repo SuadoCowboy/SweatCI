@@ -664,7 +664,7 @@ namespace SweatCI {
         command.run(arguments);
     }
 
-    bool Parser::handleSpecialAliases() {
+    bool Parser::isSpecialAlias() {
         std::string varName = currentToken.getValue();
         char front = varName.front();
         
@@ -714,7 +714,7 @@ namespace SweatCI {
             std::string variable = getVariableFromCurrentTokenValue();
 
             if (!variable.empty()) {
-                if (handleSpecialAliases()) {
+                if (isSpecialAlias()) {
                     tempLexers.push_back(lexer);
                     lexer = new Lexer(variable);
                 }
@@ -751,7 +751,7 @@ namespace SweatCI {
         }
 
         lexer = tempLexers[0];
-        advance();
+        advanceUntil({ TokenType::EOS }); // if there's something between the alias and the end of statement, we don't care!
     }
 
     void Parser::parse() {
@@ -759,10 +759,8 @@ namespace SweatCI {
             std::string variableValue = getVariableFromCurrentTokenValue();
 
             if (!variableValue.empty()) {
-                if (handleSpecialAliases())
+                if (isSpecialAlias())
                     handleAliasLexer(variableValue);
-                
-                advanceUntil({ TokenType::EOS });
             }
 
             else if (currentToken.getType() == TokenType::COMMAND)
