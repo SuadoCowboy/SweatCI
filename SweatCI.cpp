@@ -311,7 +311,7 @@ namespace SweatCI {
     }
 
     void BaseCommands::exec(void* pData, Command&, const std::vector<std::string>& args) {
-        auto variables = *(std::unordered_map<std::string, std::string>*)pData;
+        auto& variables = *(std::unordered_map<std::string, std::string>*)pData;
         execConfigFile(args[0], variables);
     }
 
@@ -630,9 +630,9 @@ namespace SweatCI {
         // make it include whitespaces in that case
         if (command.maxArgs == 1 && !arguments.empty()) {
             std::string stringBuilder;
-            for (const auto &argument : arguments) {
+            for (const auto &argument : arguments)
                 stringBuilder += argument + " ";
-            }
+
             stringBuilder.pop_back(); // remove last space
             arguments.clear();
             arguments.push_back(stringBuilder);
@@ -853,8 +853,7 @@ namespace SweatCI {
             */
         }
 
-        Lexer lexer{content.str()};
-        Parser parser(&lexer, variables);
-        parser.parse();
+        Lexer lexer = content.str();
+        Parser(&lexer, variables).parse();
     }
 }
