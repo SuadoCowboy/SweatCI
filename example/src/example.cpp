@@ -106,8 +106,8 @@ int main()
         std::getline(std::cin, input);
 
         SweatCI::Lexer lexer = input;
-        SweatCI::Parser(&lexer, variables).parse();
+        SweatCI::Parser(&lexer, &variables).parse();
         
-        SweatCI::handleLoopAliasesRunning(variables);
+        SweatCI::handleLoopAliasesRunning(&variables);
     }
 }
