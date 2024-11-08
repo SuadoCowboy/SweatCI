@@ -141,17 +141,17 @@ namespace SweatCI {
 
     std::vector<Command> Command::commands;
 
-    void BaseCommands::init(std::unordered_map<std::string, std::string> *variables) {
+    void BaseCommands::init(std::unordered_map<std::string, std::string>* pVariables) {
         // Add commands
         Command("help", 0, 1, help, "<command> - shows the usage of the command specified");
         Command("commands", 0, 0, commands, "- shows a list of commands with their usages");
         Command("echo", 1, 1, echo, "<message> - echoes a message to the console");
-        Command("alias", 1, 2, alias, "<var> <commands?> - creates/deletes variables", variables);
-        Command("variables", 0, 0, getVariables, "- list of variables", variables);
-        Command("variable", 1, 1, variable, "- shows variable value", variables);
-        Command("incrementvar", 4, 4, incrementvar, "<var|cvar> <minValue> <maxValue> <delta> - increments the value of a variable", variables);
-        Command("exec", 1, 1, exec, "- executes a .cfg file that contains SweatCI script", variables);
-        Command("toggle", 3, 3, toggle, "<var|cvar> <option1> <option2> - toggles value between option1 and option2", variables);
+        Command("alias", 1, 2, alias, "<var> <commands?> - creates/deletes variables", pVariables);
+        Command("variables", 0, 0, getVariables, "- list of variables", pVariables);
+        Command("variable", 1, 1, variable, "- shows variable value", pVariables);
+        Command("incrementvar", 4, 4, incrementvar, "<var|cvar> <minValue> <maxValue> <delta> - increments the value of a variable", pVariables);
+        Command("exec", 1, 1, exec, "- executes a .cfg file that contains SweatCI script", pVariables);
+        Command("toggle", 3, 3, toggle, "<var|cvar> <option1> <option2> - toggles value between option1 and option2", pVariables);
     }
 
     void BaseCommands::help(void*, Command& thisCommand, const std::vector<std::string>& args) {
@@ -182,15 +182,15 @@ namespace SweatCI {
     }
 
     void BaseCommands::alias(void* pData, Command&, const std::vector<std::string>& args) {
-        auto variables = (std::unordered_map<std::string, std::string>*)pData;
+        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(pData);
         
         if (args.size() == 1) {
-            if (variables->count(args[0]) == 0) {
+            if (pVariables->count(args[0]) == 0) {
                 SweatCI::Output::printf(SweatCI::ERROR, "\"{}\" variable not found\n", args[0]);
                 return;
             }
 
-            variables->erase(args[0]);
+            pVariables->erase(args[0]);
             if (args[0].front() == '!') {
                 auto it = std::find(loopAliasesRunning.begin(), loopAliasesRunning.end(), args[0]);
                 if (it != loopAliasesRunning.end())
@@ -221,20 +221,20 @@ namespace SweatCI {
         }
 
         std::string negativeVarName = '-'+args[0].substr(1);
-        if (args[0].front() == '+' && variables->count(negativeVarName) == 0) {
-            (*variables)[negativeVarName] = " ";
+        if (args[0].front() == '+' && pVariables->count(negativeVarName) == 0) {
+            (*pVariables)[negativeVarName] = " ";
         }
 
-        (*variables)[args[0]] = args[1];
+        (*pVariables)[args[0]] = args[1];
     }
 
     void BaseCommands::getVariables(void* pData, Command&, const std::vector<std::string>&) {
-        auto variables = (std::unordered_map<std::string, std::string>*)pData;
+        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(pData);
 
         std::stringstream out;
 
-        out << "amount of variables: " << variables->size();
-        for (const auto &pair : *variables)
+        out << "amount of variables: " << pVariables->size();
+        for (const auto &pair : *pVariables)
             out << "\n" << pair.first << " = \"" << pair.second << "\"";
         out << "\n";
 
@@ -242,11 +242,11 @@ namespace SweatCI {
     }
 
     void BaseCommands::variable(void* pData, Command&, const std::vector<std::string>& args) {
-        auto variables = (std::unordered_map<std::string, std::string>*)pData;
+        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(pData);
 
         const std::string& key = args[0];
-        auto it = variables->find(key);
-        if (it == variables->end()) {
+        auto it = pVariables->find(key);
+        if (it == pVariables->end()) {
             Output::printf(OutputLevel::ERROR, "variable \"{}\" does not exist\n", key);
             return;
         }
@@ -255,7 +255,7 @@ namespace SweatCI {
     }
 
     void BaseCommands::incrementvar(void* pData, Command&, const std::vector<std::string>& args) {
-        auto variables = (std::unordered_map<std::string, std::string>*)pData;
+        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(pData);
         double minValue, maxValue, delta;
 
         if (!Utils::Command::getDouble(args[1], minValue) ||
@@ -290,8 +290,8 @@ namespace SweatCI {
         }
 
         // var
-        auto it = variables->find(args[0]);
-        if (it == variables->end()) {
+        auto it = pVariables->find(args[0]);
+        if (it == pVariables->end()) {
             Output::printf(OutputLevel::ERROR, "unknown variable \"{}\"\n", args[0]);
             return;
         }
@@ -311,12 +311,12 @@ namespace SweatCI {
     }
 
     void BaseCommands::exec(void* pData, Command&, const std::vector<std::string>& args) {
-        auto& variables = *(std::unordered_map<std::string, std::string>*)pData;
-        execConfigFile(args[0], variables);
+        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(pData);
+        execConfigFile(args[0], pVariables);
     }
 
     void BaseCommands::toggle(void* pData, Command&, const std::vector<std::string>& args) {
-        auto variables = (std::unordered_map<std::string, std::string>*)pData;
+        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(pData);
 
         { // CVAR
             CVariable cvar;
@@ -334,8 +334,8 @@ namespace SweatCI {
         }
         
         // var
-        auto it = variables->find(args[0]);
-        if (it == variables->end()) {
+        auto it = pVariables->find(args[0]);
+        if (it == pVariables->end()) {
             Output::printf(OutputLevel::ERROR, "unknown variable \"{}\"\n", args[0]);
             return;
         }
@@ -449,7 +449,7 @@ namespace SweatCI {
 #define _MAKE_CVARUTILS_NUMBER_FUNCTIONS(type, convertFunc, setFuncName, getFuncName) \
     void Utils::Cvar::setFuncName(void* pData, const std::string& value) { \
         try { \
-            *(type*)pData = convertFunc(value); \
+            *static_cast<type*>(pData) = convertFunc(value); \
         } catch (...) {return;} \
     } \
     std::string Utils::Cvar::getFuncName(void* pData) { \
@@ -478,7 +478,7 @@ namespace SweatCI {
 #define _MAKE_COMMANDUTILS_FUNCTIONS(type, convertFunc, getFuncName, wrongTypeFmt) \
     bool Utils::Command::getFuncName(const std::string& str, type& out) { \
         try { \
-            out = convertFunc(str); \
+            out = static_cast<type>(convertFunc(str)); \
             return true; \
         }  catch (...) { \
             Output::printf(ERROR, wrongTypeFmt, str); \
@@ -489,9 +489,9 @@ namespace SweatCI {
     _MAKE_COMMANDUTILS_FUNCTIONS(float, std::stof, getFloat, "\"{}\" is not a float\n");
     _MAKE_COMMANDUTILS_FUNCTIONS(double, std::stod, getDouble, "\"{}\" is not a double\n");
     _MAKE_COMMANDUTILS_FUNCTIONS(int, std::stoi, getInteger, "\"{}\" is not a integer\n");
-    _MAKE_COMMANDUTILS_FUNCTIONS(short, (short)std::stoi, getShort, "\"{}\" is not a short\n");
-    _MAKE_COMMANDUTILS_FUNCTIONS(unsigned short, (unsigned short)std::stoi, getUnsignedShort, "\"{}\" is not a unsigned short\n");
-    _MAKE_COMMANDUTILS_FUNCTIONS(unsigned char, (unsigned char)std::stoi, getUnsignedChar, "\"{}\" is not a unsigned char\n");
+    _MAKE_COMMANDUTILS_FUNCTIONS(short, std::stoi, getShort, "\"{}\" is not a short\n");
+    _MAKE_COMMANDUTILS_FUNCTIONS(unsigned short, std::stoi, getUnsignedShort, "\"{}\" is not a unsigned short\n");
+    _MAKE_COMMANDUTILS_FUNCTIONS(unsigned char, std::stoi, getUnsignedChar, "\"{}\" is not a unsigned char\n");
 
     void CVARStorage::setCvar(const std::string& name, void* pData, void(*set)(void* pData, const std::string& value), std::string (*toString)(void* pData), const std::string& usage) {
         cvars[name] = {set, toString};
@@ -532,19 +532,19 @@ namespace SweatCI {
     std::vector<std::string> loopAliasesRunning = {};
     std::vector<std::string> toggleTypesRunning = {};
 
-    void handleLoopAliasesRunning(std::unordered_map<std::string, std::string>& variables) {
+    void handleLoopAliasesRunning(std::unordered_map<std::string, std::string>* pVariables) {
         for (auto& loopAlias : loopAliasesRunning) {
-            Lexer lexer{variables[loopAlias]};
-            Parser(&lexer, variables).parse();
+            Lexer lexer{pVariables->at(loopAlias)};
+            Parser(&lexer, pVariables).parse();
         }
     }
 
-    Parser::Parser(Lexer *lexer, std::unordered_map<std::string, std::string>& variables) : lexer(lexer), variables(variables) {
+    Parser::Parser(Lexer *pLexer, std::unordered_map<std::string, std::string>* pVariables) : pLexer(pLexer), pVariables(pVariables) {
         advance();
     }
 
     void Parser::advance() {
-        currentToken = lexer->nextToken();
+        currentToken = pLexer->nextToken();
     }
 
     void Parser::advanceUntil(const std::vector<TokenType>& tokenTypes) {
@@ -579,8 +579,8 @@ namespace SweatCI {
                             position++;
                         }
                         
-                        auto it = variables.find(variable);
-                        if (it != variables.end())
+                        auto it = pVariables->find(variable);
+                        if (it != pVariables->end())
                             result += it->second; // add variable
                         
                         else { // search in cvars
@@ -610,8 +610,8 @@ namespace SweatCI {
     }
 
     std::string Parser::getVariableFromCurrentTokenValue() {
-        auto it = variables.find(currentToken.getValue());
-        if (it != variables.end())
+        auto it = pVariables->find(currentToken.getValue());
+        if (it != pVariables->end())
             return it->second;
         return "";
     }
@@ -705,9 +705,9 @@ namespace SweatCI {
 
     void Parser::handleAliasLexer(const std::string& input) {
         std::vector<Lexer*> tempLexers;
-        tempLexers.push_back(lexer);
+        tempLexers.push_back(pLexer);
 
-        lexer = new Lexer(input);
+        pLexer = new Lexer(input);
         advance();
 
         while (currentToken.getType() != TokenType::_EOF) {
@@ -715,8 +715,8 @@ namespace SweatCI {
 
             if (!variable.empty()) {
                 if (isSpecialAlias()) {
-                    tempLexers.push_back(lexer);
-                    lexer = new Lexer(variable);
+                    tempLexers.push_back(pLexer);
+                    pLexer = new Lexer(variable);
                 }
             }
 
@@ -731,7 +731,7 @@ namespace SweatCI {
             advance();
 
             if (tempLexers.size() == aliasMaxCalls) {
-                delete lexer;
+                delete pLexer;
 
                 for (size_t i = 1; i < tempLexers.size(); ++i) {
                     delete tempLexers[i];
@@ -741,16 +741,16 @@ namespace SweatCI {
             }
 
             while (currentToken.getType() == TokenType::_EOF && tempLexers.size() > 1) {
-                delete lexer;
+                delete pLexer;
 
-                lexer = tempLexers.back();
+                pLexer = tempLexers.back();
                 advance();
 
                 tempLexers.pop_back();
             }
         }
 
-        lexer = tempLexers[0];
+        pLexer = tempLexers[0];
         advanceUntil({ TokenType::EOS }); // if there's something between the alias and the end of statement, we don't care!
     }
 
@@ -775,7 +775,7 @@ namespace SweatCI {
         }
     }
 
-    void execConfigFile(const std::string& path, std::unordered_map<std::string, std::string>& variables) {
+    void execConfigFile(const std::string& path, std::unordered_map<std::string, std::string>* pVariables) {
         std::ifstream file(path);
 
         if (!file) {
@@ -852,6 +852,6 @@ namespace SweatCI {
         }
 
         Lexer lexer = content.str();
-        Parser(&lexer, variables).parse();
+        Parser(&lexer, pVariables).parse();
     }
 }

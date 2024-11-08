@@ -149,7 +149,7 @@ namespace SweatCI {
     };
 
     namespace BaseCommands {
-        void init(std::unordered_map<std::string, std::string> *variables);
+        void init(std::unordered_map<std::string, std::string>* variables);
 
         void help(void*, Command&, const std::vector<std::string>& args);
         void commands(void*, Command&, const std::vector<std::string>&);
@@ -249,11 +249,11 @@ namespace SweatCI {
     extern std::vector<std::string> loopAliasesRunning;
     extern std::vector<std::string> toggleTypesRunning;
 
-    void handleLoopAliasesRunning(std::unordered_map<std::string, std::string>& variables);
+    void handleLoopAliasesRunning(std::unordered_map<std::string, std::string>* pVariables);
 
     class Parser {
     public:
-        Parser(Lexer *lexer, std::unordered_map<std::string, std::string>& variables);
+        Parser(Lexer *lexer, std::unordered_map<std::string, std::string>* variables);
         void parse();
 
         unsigned short aliasMaxCalls = 50000;
@@ -268,10 +268,10 @@ namespace SweatCI {
         void handleAliasLexer(const std::string& input);
 
         Token currentToken;
-        Lexer *lexer = nullptr;
-        std::unordered_map<std::string, std::string>& variables;
+        Lexer *pLexer = nullptr;
+        std::unordered_map<std::string, std::string>* pVariables;
         std::string getVariableFromCurrentTokenValue();
     };
 
-    void execConfigFile(const std::string& path, std::unordered_map<std::string, std::string>& variables);
+    void execConfigFile(const std::string& path, std::unordered_map<std::string, std::string>* pVariables);
 }
