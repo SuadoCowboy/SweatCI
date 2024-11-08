@@ -81,8 +81,8 @@ namespace SweatCI {
         Token& operator=(const Token& other);
 
     private:
-        TokenType type;
-        std::string value;
+        TokenType type = TokenType::NOTHING;
+        std::string value = "";
     };
 
     enum OutputLevel {

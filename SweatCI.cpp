@@ -46,7 +46,7 @@ namespace SweatCI {
         return "UNKNOWN";
     }
 
-    Token::Token() : type(NOTHING), value("") {}
+    Token::Token() {}
     Token::~Token() {}
 
     Token::Token(const Token& other) : type(other.type), value(other.value) {}
@@ -591,6 +591,8 @@ namespace SweatCI {
                             else
                                 result += "$" + variable; // or else just add with the $
                         }
+
+                        continue;
                     }
 
                     if (currentToken.getValue()[position] == '\\' && position+1 < currentToken.getValue().length() && currentToken.getValue()[position+1] == '$')
@@ -819,7 +821,7 @@ namespace SweatCI {
                 if (inComment) continue;
 
                 if (line[i] == '"' && (i == 0 || line[i-1] != '\\')) {
-                    inQuotes = not inQuotes;
+                    inQuotes = !inQuotes;
                     continue;
                 }
 
