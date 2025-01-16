@@ -1,6 +1,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <vector>
+#include <sstream>
 
 #include "SweatCI.h"
 
@@ -37,15 +38,40 @@ static void print(void*, const SweatCI::OutputLevel& level, const std::string& m
 }
 
 bool running = true;
-static void setRunningToFalse(void*, SweatCI::Command&, const std::vector<std::string>&) {
+static void setRunningToFalseCommand(SweatCI::CommandContext&) {
     running = false;
 }
 
+static void infoSelfCommand(SweatCI::CommandContext& ctx) {
+    std::stringstream info;
+    if (ctx.args.size() > 0 && ctx.args[0] == "minimal") {
+        info << ctx.args.size()
+             << ' ' << ctx.lineCount
+             << ' ' << ctx.lineIndex << ':' << ctx.columnIndex
+             << ' ' << ctx.runningFrom
+             << ' ' << ctx.filePath << "\n";
+    } else {
+        info << "ARGS:";
+        for (auto& arg : ctx.args)
+            info << " \"" << arg << "\";";
+
+        info << "\nARGS COUNT: " << ctx.args.size()
+            << "\nFILE PATH: " << ctx.filePath
+            << "\nLINE:" << ctx.lineIndex << " COLUMN: " << ctx.columnIndex
+            << "\nLINES: " << ctx.lineCount
+            << "\nRUNNING FROM FLAGS: " << ctx.runningFrom << "\n";
+    }
+
+
+    SweatCI::print(SweatCI::ECHO, info.str());
+}
+
 static void init() {
-    SweatCI::Output::setPrintFunction(nullptr, print);
+    SweatCI::setPrintCallback(nullptr, print);
     SweatCI::BaseCommands::init(&variables);
 
-    SweatCI::Command("quit", 0, 0, setRunningToFalse, "- quits");
+    SweatCI::Command("info_self", 0, 10, infoSelfCommand, "- prints out its own context");
+    SweatCI::Command("quit", 0, 0, setRunningToFalseCommand, "- quits");
 
     SweatCI::CVARStorage::setCvar("t_int",
         &test1,
@@ -105,7 +131,8 @@ int main()
         std::string input;
         std::getline(std::cin, input);
 
-        SweatCI::Lexer lexer = input;
+        SweatCI::CommandContext ctx = { .runningFrom = SweatCI::CONSOLE };
+        SweatCI::Lexer lexer = {ctx, input};
         SweatCI::Parser(&lexer, &variables).parse();
         
         SweatCI::handleLoopAliasesRunning(&variables);

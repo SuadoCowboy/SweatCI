@@ -72,27 +72,31 @@ namespace SweatCI {
         return "Token(" + tokenTypeToString(type) + ", \"" + value + "\")";
     }
 
-    void Output::setPrintFunction(void* pData, PrintFunction _printFunc) {
+    void setPrintCallback(void* pData, PrintCallback _printFunc) {
         printFunc = _printFunc;
         printFuncData = pData;
     }
 
-    void Output::print(const OutputLevel &level, const std::string& str) {
+    void print(const OutputLevel &level, const std::string& str) {
         printFunc(printFuncData, level, str);
     }
 
-    void Output::printUnknownCommand(const std::string& command) {
+    void printUnknownCommand(const std::string& command) {
         printf(OutputLevel::ERROR, "unknown command \"{}\"\n", command);
     }
 
-    PrintFunction Output::printFunc;
-    void*Output::printFuncData;
+    void print(const OutputLevel& level, const std::string& str);
+    void setPrintCallback(void* pData, PrintCallback printFunc);
+    void printUnknownCommand(const std::string& command);
 
-    Command::Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCall commandCallFunc, const std::string& usage, void* pData)
-      : name(name), usage(usage), minArgs(minArgs), maxArgs(maxArgs), commandCallFunc(commandCallFunc), pData(pData) {
+    PrintCallback printFunc = nullptr;
+    void* printFuncData = nullptr;
+
+    Command::Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCallback commandCallFunc, const std::string& usage, void* pData)
+      : name(name), usage(usage), minArgs(minArgs), maxArgs(maxArgs), callback(commandCallFunc), pData(pData) {
         for (const auto& c : commands) {
             if (c.name == name) {
-                Output::printf(OutputLevel::ERROR, "command with name \"{}\" already exists\n", name);
+                printf(OutputLevel::ERROR, "command with name \"{}\" already exists\n", name);
                 return;
             }
         }
@@ -100,15 +104,15 @@ namespace SweatCI {
         commands.emplace_back(*this);
     }
 
-    bool Command::getCommand(const std::string& name, Command& outCommand, bool printError) {
-        for (auto &command : commands)
+    bool Command::getCommand(const std::string& name, Command*& pCommandOut, bool printError) {
+        for (auto& command : commands)
             if (command.name == name) {
-                outCommand = command;
+                pCommandOut = &command;
                 return true;
             }
 
         if (printError)
-            Output::printUnknownCommand(name);
+            printUnknownCommand(name);
 
         return false;
     }
@@ -128,15 +132,17 @@ namespace SweatCI {
     }
 
     void Command::printUsage(const Command &command) {
-        Output::print(OutputLevel::WARNING, command.name + ' ' + command.usage + '\n');
+        print(OutputLevel::WARNING, command.name + ' ' + command.usage + '\n');
     }
 
     void Command::clear() {
         commands.clear();
     }
 
-    void Command::run(const std::vector<std::string>& args) {
-        commandCallFunc(pData, *this, args);
+    void Command::run(CommandContext& ctx) {
+        ctx.pCommand = this;
+
+        callback(ctx);
     }
 
     std::vector<Command> Command::commands;
@@ -154,51 +160,51 @@ namespace SweatCI {
         Command("toggle", 3, 3, toggle, "<var|cvar> <option1> <option2> - toggles value between option1 and option2", pVariables);
     }
 
-    void BaseCommands::help(void*, Command& thisCommand, const std::vector<std::string>& args) {
-        if (args.size() == 1) {
+    void BaseCommands::help(CommandContext& ctx) {
+        if (ctx.args.size() == 1) {
             // Print usage for a specific command
-            Command command;
-            if (Command::getCommand(args[0], command, true))
-                Command::printUsage(command);
+            Command* pCommand = nullptr;
+            if (Command::getCommand(ctx.args[0], pCommand, true))
+                Command::printUsage(*pCommand);
         } else
-            Output::printf(OutputLevel::WARNING, "{} {} - see \"commands\" command to get a list of commands\n", thisCommand.name, thisCommand.usage);
+            printf(OutputLevel::WARNING, "{} {} - see \"commands\" command to get a list of commands\n", ctx.pCommand->name, ctx.pCommand->usage);
     }
 
-    void BaseCommands::commands(void*, Command&, const std::vector<std::string>&) {
+    void BaseCommands::commands(CommandContext&) {
         std::stringstream out;
         for (auto& command : Command::getCommands())
             out << command.name << " " << command.usage << "\n";
 
-        Output::print(OutputLevel::ECHO, out.str());
+        print(OutputLevel::ECHO, out.str());
     }
 
-    void BaseCommands::echo(void*, Command&, const std::vector<std::string>& args) {
+    void BaseCommands::echo(CommandContext& ctx) {
         std::stringstream message;
-        for (const auto &arg : args)
+        for (const auto& arg : ctx.args)
             message << arg;
         message << "\n";
 
-        Output::print(OutputLevel::ECHO, message.str());
+        print(OutputLevel::ECHO, message.str());
     }
 
-    void BaseCommands::alias(void* pData, Command&, const std::vector<std::string>& args) {
-        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(pData);
+    void BaseCommands::alias(CommandContext& ctx) {
+        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(ctx.pCommand->pData);
         
-        if (args.size() == 1) {
-            if (pVariables->count(args[0]) == 0) {
-                SweatCI::Output::printf(SweatCI::ERROR, "\"{}\" variable not found\n", args[0]);
+        if (ctx.args.size() == 1) {
+            if (pVariables->count(ctx.args[0]) == 0) {
+                SweatCI::printf(SweatCI::ERROR, "\"{}\" variable not found\n", ctx.args[0]);
                 return;
             }
 
-            pVariables->erase(args[0]);
-            if (args[0].front() == '!') {
-                auto it = std::find(loopAliasesRunning.begin(), loopAliasesRunning.end(), args[0]);
+            pVariables->erase(ctx.args[0]);
+            if (ctx.args[0].front() == '!') {
+                auto it = std::find(loopAliasesRunning.begin(), loopAliasesRunning.end(), ctx.args[0]);
                 if (it != loopAliasesRunning.end())
                     loopAliasesRunning.erase(it);
             }
 
-            else if (args[0].front() == '+') {
-                auto it = std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), args[0].substr(1));
+            else if (ctx.args[0].front() == '+') {
+                auto it = std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), ctx.args[0].substr(1));
                 if (it != toggleTypesRunning.end())
                     toggleTypesRunning.erase(it);
             }
@@ -207,73 +213,73 @@ namespace SweatCI {
         }
 
         {
-            Command command;
-            if (Command::getCommand(args[0], command, false)) {
-                Output::print(OutputLevel::ERROR, "varName is a command name, therefore this variable can not be created\n");
+            Command* pCommand = nullptr;
+            if (Command::getCommand(ctx.args[0], pCommand, false)) {
+                print(OutputLevel::ERROR, "varName is a command name, therefore this variable can not be created\n");
                 return;
             }
         }
 
-        std::regex whitespace_regex("\\S+");
-        if (!std::regex_match(args[0], whitespace_regex)) {
-            Output::print(OutputLevel::ERROR, "variable name can not have whitespace.\n");
+        std::regex whitespace_regex("\\S+"); // TODO: regex is unecessary here I think(use old ways to do this instead of using regex)
+        if (!std::regex_match(ctx.args[0], whitespace_regex)) {
+            print(OutputLevel::ERROR, "variable name can not have whitespace.\n");
             return;
         }
 
-        std::string negativeVarName = '-'+args[0].substr(1);
-        if (args[0].front() == '+' && pVariables->count(negativeVarName) == 0) {
+        std::string negativeVarName = '-'+ctx.args[0].substr(1);
+        if (ctx.args[0].front() == '+' && pVariables->count(negativeVarName) == 0) {
             (*pVariables)[negativeVarName] = " ";
         }
 
-        (*pVariables)[args[0]] = args[1];
+        (*pVariables)[ctx.args[0]] = ctx.args[1];
     }
 
-    void BaseCommands::getVariables(void* pData, Command&, const std::vector<std::string>&) {
-        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(pData);
+    void BaseCommands::getVariables(CommandContext& ctx) {
+        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(ctx.pCommand->pData);
 
         std::stringstream out;
 
         out << "amount of variables: " << pVariables->size();
-        for (const auto &pair : *pVariables)
+        for (const auto& pair : *pVariables)
             out << "\n" << pair.first << " = \"" << pair.second << "\"";
         out << "\n";
 
-        Output::print(OutputLevel::ECHO, out.str());
+        print(OutputLevel::ECHO, out.str());
     }
 
-    void BaseCommands::variable(void* pData, Command&, const std::vector<std::string>& args) {
-        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(pData);
+    void BaseCommands::variable(CommandContext& ctx) {
+        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(ctx.pCommand->pData);
 
-        const std::string& key = args[0];
+        const std::string& key = ctx.args[0];
         auto it = pVariables->find(key);
         if (it == pVariables->end()) {
-            Output::printf(OutputLevel::ERROR, "variable \"{}\" does not exist\n", key);
+            printf(OutputLevel::ERROR, "variable \"{}\" does not exist\n", key);
             return;
         }
 
-        Output::printf(OutputLevel::ECHO, "{} = \"{}\"\n", key, it->second);
+        printf(OutputLevel::ECHO, "{} = \"{}\"\n", key, it->second);
     }
 
-    void BaseCommands::incrementvar(void* pData, Command&, const std::vector<std::string>& args) {
-        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(pData);
+    void BaseCommands::incrementvar(CommandContext& ctx) {
+        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(ctx.pCommand->pData);
         double minValue, maxValue, delta;
 
-        if (!Utils::Command::getDouble(args[1], minValue) ||
-            !Utils::Command::getDouble(args[2], maxValue) ||
-            !Utils::Command::getDouble(args[3], delta))
+        if (!Utils::Command::getDouble(ctx.args[1], minValue) ||
+            !Utils::Command::getDouble(ctx.args[2], maxValue) ||
+            !Utils::Command::getDouble(ctx.args[3], delta))
             return;
 
         if (minValue > maxValue) {
-            Output::print(OutputLevel::ERROR, "minValue is higher than maxValue");
+            print(OutputLevel::ERROR, "minValue is higher than maxValue\n");
             return;
         }
 
         { // cvar
-            CVariable cvar;
-            Command cvarCommand;
-            if (CVARStorage::getCvar(args[0], cvar) && Command::getCommand(args[0], cvarCommand, false)) {
+            CVariable* pCvar = nullptr;
+            Command* pCvarCommand = nullptr;
+            if (CVARStorage::getCvar(ctx.args[0], pCvar) && Command::getCommand(ctx.args[0], pCvarCommand, false)) {
                 double variableValue;
-                if (!Utils::Command::getDouble(cvar.toString(cvarCommand.pData), variableValue))
+                if (!Utils::Command::getDouble(pCvar->toString(pCvarCommand->pData), variableValue))
                     return;
 
                 variableValue += delta;
@@ -283,16 +289,16 @@ namespace SweatCI {
                 else if (variableValue < minValue)
                     variableValue = maxValue;
                 
-                cvar.set(cvarCommand.pData, numberToString(variableValue));
+                pCvar->set(pCvarCommand->pData, numberToString(variableValue));
 
                 return;
             }
         }
 
         // var
-        auto it = pVariables->find(args[0]);
+        auto it = pVariables->find(ctx.args[0]);
         if (it == pVariables->end()) {
-            Output::printf(OutputLevel::ERROR, "unknown variable \"{}\"\n", args[0]);
+            printf(OutputLevel::ERROR, "unknown variable \"{}\"\n", ctx.args[0]);
             return;
         }
 
@@ -310,43 +316,56 @@ namespace SweatCI {
         it->second = numberToString(variableValue);
     }
 
-    void BaseCommands::exec(void* pData, Command&, const std::vector<std::string>& args) {
-        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(pData);
-        execConfigFile(args[0], pVariables);
+    void BaseCommands::exec(CommandContext& ctx) {
+        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(ctx.pCommand->pData);
+        execConfigFile(ctx, ctx.args[0], pVariables);
     }
 
-    void BaseCommands::toggle(void* pData, Command&, const std::vector<std::string>& args) {
-        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(pData);
+    void BaseCommands::toggle(CommandContext& ctx) {
+        auto pVariables = static_cast<std::unordered_map<std::string, std::string>*>(ctx.pCommand->pData);
 
         { // CVAR
-            CVariable cvar;
-            Command cvarCommand;
-            if (CVARStorage::getCvar(args[0], cvar) && Command::getCommand(args[0], cvarCommand, false)) {
-                std::string asString = cvar.toString(cvarCommand.pData);
+            CVariable* pCvar = nullptr;
+            Command* pCvarCommand = nullptr;
+            if (CVARStorage::getCvar(ctx.args[0], pCvar) && Command::getCommand(ctx.args[0], pCvarCommand, false)) {
+                std::string asString = pCvar->toString(pCvarCommand->pData);
 
-                if (asString == args[1])
-                    cvar.set(cvarCommand.pData, args[2]);
+                if (asString == ctx.args[1])
+                    pCvar->set(pCvarCommand->pData, ctx.args[2]);
                 else
-                    cvar.set(cvarCommand.pData, args[1]);
+                    pCvar->set(pCvarCommand->pData, ctx.args[1]);
 
                 return;
             }
         }
         
         // var
-        auto it = pVariables->find(args[0]);
+        auto it = pVariables->find(ctx.args[0]);
         if (it == pVariables->end()) {
-            Output::printf(OutputLevel::ERROR, "unknown variable \"{}\"\n", args[0]);
+            printf(OutputLevel::ERROR, "unknown variable \"{}\"\n", ctx.args[0]);
             return;
         }
 
-        if (it->second == args[1])
-            it->second = args[2];
+        if (it->second == ctx.args[1])
+            it->second = ctx.args[2];
         else
-            it->second = args[1];
+            it->second = ctx.args[1];
     }
 
-    Lexer::Lexer(const std::string& input) : input(input), position(0) {}
+    Lexer::Lexer(const CommandContext& ctx, const std::string& input) : ctx(ctx), input(input) {}
+
+    bool Lexer::nextPosition() {
+        ++position;
+        ++ctx.columnIndex;
+
+        if (input[position] == '\n') {
+            ++ctx.lineIndex;
+            ctx.columnIndex = 0;
+            return true;
+        }
+
+        return false;
+    }
 
     Token Lexer::nextToken() {
         if (position >= input.length()) {
@@ -355,8 +374,17 @@ namespace SweatCI {
         }
 
         char currentChar = input[position];
+        if (currentChar == '\n') {
+            ++position;
+            lastToken = Token(TokenType::EOS, "\n");
+            return lastToken;
+        }
+
         while (std::isspace(currentChar)) {
-            position++;
+            if (nextPosition()) {
+                lastToken = Token(TokenType::EOS, "\n");
+                return lastToken;
+            }
 
             if (position >= input.length()) {
                 lastToken = Token(TokenType::_EOF, "");
@@ -366,8 +394,8 @@ namespace SweatCI {
             currentChar = input[position];
         }
 
-        if (input[position] == ';' && (position == 0 || input[position-1] != '\\')) {
-            position++;
+        if ((input[position] == ';' || input[position] == '\n') && (position == 0 || input[position-1] != '\\')) {
+            nextPosition();
             lastToken = Token(TokenType::EOS, ";");
             return lastToken;
         }
@@ -377,8 +405,7 @@ namespace SweatCI {
     }
 
     bool Lexer::isCommand(const std::string& commandName) {
-        for (const auto &command : Command::getCommands()) {
-
+        for (const auto& command : Command::getCommands()) {
             if (command.name == commandName)
                 return true;
         }
@@ -391,9 +418,9 @@ namespace SweatCI {
             return parseString();
 
         std::string tokenValue;
-        while (position < input.length() && !std::isspace(input[position]) && input[position] != ';') {
+        while (position < input.length() && !std::isspace(input[position]) && input[position] != ';' && input[position] != '\n') {
             tokenValue += input[position];
-            position++;
+            nextPosition();
         }
 
 		// TODO: wtf is that "x == Nothing || x != Command"????? Why not just "x != Command"???
@@ -406,23 +433,24 @@ namespace SweatCI {
     Token Lexer::parseString() {
         std::string tokenValue = "";
 
-        position++; // Skip the first double quote
+        ++position; // Skip the first double quote
+        ++ctx.columnIndex;
 
         while (position < input.length() && input[position] != '"') {
             // escape '\\'
             if (input[position] == '\\' && position + 1 < input.length() && input[position+1] == '\\')
-                position++;
+                nextPosition();
             
             // escape '"'
             else if (input[position] == '\\' && position + 1 < input.length() && input[position+1] == '"')
-                position++;
+                nextPosition();
 
             tokenValue += input[position];
-            position++;
+            nextPosition();
         }
 
         if (input[position] == '"')
-            position++; // Skip the last double quote if exists
+            nextPosition(); // Skip the last double quote if exists
 
         return Token(TokenType::STRING, tokenValue);
     }
@@ -470,7 +498,7 @@ namespace SweatCI {
 
             return true;
         } catch (...) {
-            Output::printf(ERROR, "\"{}\" is not a boolean\n", str);
+            printf(ERROR, "\"{}\" is not a boolean\n", str);
             return false;
         }
     }
@@ -481,7 +509,7 @@ namespace SweatCI {
             out = static_cast<type>(convertFunc(str)); \
             return true; \
         }  catch (...) { \
-            Output::printf(ERROR, wrongTypeFmt, str); \
+            printf(ERROR, wrongTypeFmt, str); \
             return false; \
         } \
     } \
@@ -498,32 +526,32 @@ namespace SweatCI {
         Command(name, 0, 1, asCommand, usage, pData);
     }
 
-    bool CVARStorage::getCvar(const std::string& name, CVariable& buf) {
+    bool CVARStorage::getCvar(const std::string& name, CVariable*& pBuf) {
         if (cvars.count(name) == 0)
             return false;
 
-        buf = cvars[name];
+        pBuf = &cvars[name];
         return true;
     }
 
-    void CVARStorage::asCommand(void*, Command& command, const std::vector<std::string>& args) {
-        CVariable cvar;
-        if (!getCvar(command.name, cvar)) {
-            Output::printf(ERROR, "\"{}\" CVAR not found", command.name);
+    void CVARStorage::asCommand(CommandContext& ctx) {
+        CVariable* pCvar = nullptr;
+        if (!getCvar(ctx.pCommand->name, pCvar)) {
+            printf(ERROR, "\"{}\" CVAR not found", ctx.pCommand->name);
             return;
         }
 
         // if should print to output
-        if (args.size() == 0) {
-            Output::printf(OutputLevel::ECHO, "{}\n", cvar.toString(command.pData));
+        if (ctx.args.size() == 0) {
+            printf(OutputLevel::ECHO, "{}\n", pCvar->toString(ctx.pCommand->pData));
             return;
         }
 
         // if should set value
         try {
-            cvar.set(command.pData, args[0]);
+            pCvar->set(ctx.pCommand->pData, ctx.args[0]);
         } catch (...) {
-            Command::printUsage(command);
+            Command::printUsage(*ctx.pCommand);
         }
     }
 
@@ -534,12 +562,12 @@ namespace SweatCI {
 
     void handleLoopAliasesRunning(std::unordered_map<std::string, std::string>* pVariables) {
         for (auto& loopAlias : loopAliasesRunning) {
-            Lexer lexer{pVariables->at(loopAlias)};
+            Lexer lexer{ { .runningFrom = ALIAS|LOOP_ALIAS|INTERNAL }, pVariables->at(loopAlias)};
             Parser(&lexer, pVariables).parse();
         }
     }
 
-    Parser::Parser(Lexer *pLexer, std::unordered_map<std::string, std::string>* pVariables) : pLexer(pLexer), pVariables(pVariables) {
+    Parser::Parser(Lexer* pLexer, std::unordered_map<std::string, std::string>* pVariables) : pLexer(pLexer), pVariables(pVariables) {
         advance();
     }
 
@@ -584,10 +612,10 @@ namespace SweatCI {
                             result += it->second; // add variable
                         
                         else { // search in cvars
-                            CVariable cvar;
-                            Command command;
-                            if (CVARStorage::getCvar(variable, cvar) && Command::getCommand(variable, command, false))
-                                result += cvar.toString(command.pData);
+                            CVariable* pCvar = nullptr;
+                            Command* pCommand = nullptr;
+                            if (CVARStorage::getCvar(variable, pCvar) && Command::getCommand(variable, pCommand, false))
+                                result += pCvar->toString(pCommand->pData);
                             else
                                 result += "$" + variable; // or else just add with the $
                         }
@@ -621,49 +649,49 @@ namespace SweatCI {
     void Parser::handleCommandToken() {
         std::string commandString = currentToken.getValue();
 
-        Command command;
-        if (!Command::getCommand(commandString, command, true))
+        Command* pCommand = nullptr;
+        if (!Command::getCommand(commandString, pCommand, true))
             return;
 
         advance(); // skips the command token
 
-        std::vector<std::string> arguments = getArguments();
+        pLexer->ctx.args = getArguments();
 
         // make it include whitespaces in that case
-        if (command.maxArgs == 1 && !arguments.empty()) {
+        if (pCommand->maxArgs == 1 && !pLexer->ctx.args.empty()) {
             std::string stringBuilder;
-            for (const auto &argument : arguments)
+            for (const auto& argument : pLexer->ctx.args)
                 stringBuilder += argument + " ";
 
             stringBuilder.pop_back(); // remove last space
-            arguments.clear();
-            arguments.push_back(stringBuilder);
+            pLexer->ctx.args.clear();
+            pLexer->ctx.args.push_back(stringBuilder);
         }
 
         // checks if arguments size is within the allowed
-        if (arguments.size() > (size_t)command.maxArgs || arguments.size() < (size_t)command.minArgs) {
-            Command::printUsage(command);
-            if (!arguments.empty())
-                Output::print(OutputLevel::ECHO, "arguments size must be within range [" + std::to_string(command.minArgs) + "," + std::to_string(command.maxArgs) + "], but size is " + std::to_string(arguments.size()) + '\n');
+        if (pLexer->ctx.args.size() > (size_t)pCommand->maxArgs || pLexer->ctx.args.size() < (size_t)pCommand->minArgs) {
+            Command::printUsage(*pCommand);
+            if (!pLexer->ctx.args.empty())
+                print(OutputLevel::ECHO, "arguments size must be within range [" + std::to_string(pCommand->minArgs) + "," + std::to_string(pCommand->maxArgs) + "], but size is " + std::to_string(pLexer->ctx.args.size()) + '\n');
             return;
         }
 
-        if (command.name[0] == '+') {
-            if (std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), command.name.substr(1)) != toggleTypesRunning.end())
+        if (pCommand->name[0] == '+') {
+            if (std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), pCommand->name.substr(1)) != toggleTypesRunning.end())
                 return;
             
-            toggleTypesRunning.push_back(command.name.substr(1));
+            toggleTypesRunning.push_back(pCommand->name.substr(1));
         }
             
-        else if (command.name[0] == '-') {
-            auto it = std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), command.name.substr(1));
+        else if (pCommand->name[0] == '-') {
+            auto it = std::find(toggleTypesRunning.begin(), toggleTypesRunning.end(), pCommand->name.substr(1));
             if (it == toggleTypesRunning.end())
                 return;
             
             toggleTypesRunning.erase(it);
         }
 
-        command.run(arguments);
+        pCommand->run(pLexer->ctx);
     }
 
     bool Parser::isSpecialAlias() {
@@ -709,7 +737,9 @@ namespace SweatCI {
         std::vector<Lexer*> tempLexers;
         tempLexers.push_back(pLexer);
 
-        pLexer = new Lexer(input);
+        pLexer->ctx.runningFrom |= ALIAS;
+
+        pLexer = new Lexer(pLexer->ctx, input);
         advance();
 
         while (currentToken.getType() != TokenType::_EOF) {
@@ -718,7 +748,7 @@ namespace SweatCI {
             if (!variable.empty()) {
                 if (isSpecialAlias()) {
                     tempLexers.push_back(pLexer);
-                    pLexer = new Lexer(variable);
+                    pLexer = new Lexer(pLexer->ctx, variable);
                 }
             }
 
@@ -726,7 +756,7 @@ namespace SweatCI {
                 handleCommandToken();
 
             else if (currentToken.getType() == TokenType::STRING) {
-                Output::printUnknownCommand(currentToken.getValue());
+                printUnknownCommand(currentToken.getValue());
                 advanceUntil({ TokenType::EOS });
             }
 
@@ -769,7 +799,7 @@ namespace SweatCI {
                 handleCommandToken();
 
             else if (currentToken.getType() == TokenType::STRING) {
-                Output::printUnknownCommand(currentToken.getValue());
+                printUnknownCommand(currentToken.getValue());
                 advanceUntil({ TokenType::EOS });
             }
 
@@ -777,11 +807,11 @@ namespace SweatCI {
         }
     }
 
-    void execConfigFile(const std::string& path, std::unordered_map<std::string, std::string>* pVariables) {
+    void execConfigFile(CommandContext ctx, const std::string& path, std::unordered_map<std::string, std::string>* pVariables) {
         std::ifstream file(path);
 
         if (!file) {
-            Output::printf(OutputLevel::ERROR, "could not load file \"{}\"\n", path);
+            printf(OutputLevel::ERROR, "could not load file \"{}\"\n", path);
             return;
         }
 
@@ -793,6 +823,7 @@ namespace SweatCI {
         while (file.good()) {
             std::string line;
             std::getline(file, line);
+            ++ctx.lineCount;
 
             for (size_t i = 0; i < line.size(); ++i) {
                 if (removeOneFromIndex) {
@@ -841,10 +872,11 @@ namespace SweatCI {
                 }
             }
 
-            if (!inComment)
+            if (!inComment) {
                 content << line;
-            if (!inQuotes)
-                content << ';';
+                if (!inQuotes)
+                    content << '\n';
+            }
             /*
             if (inQuotes)
                 content << ' ';
@@ -853,7 +885,9 @@ namespace SweatCI {
             */
         }
 
-        Lexer lexer = content.str();
+        ctx.runningFrom |= FILE;
+        ctx.filePath = path;
+        Lexer lexer = {ctx, content.str()};
         Parser(&lexer, pVariables).parse();
     }
 }

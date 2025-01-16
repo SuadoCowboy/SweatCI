@@ -92,36 +92,53 @@ namespace SweatCI {
         ERROR, // anything that went wrong
     };
 
-    typedef void(*PrintFunction)(void* pData, const OutputLevel& level, const std::string& message);
+    typedef void(*PrintCallback)(void* pData, const OutputLevel& level, const std::string& message);
 
-    class Output {
-    public:
-        template<typename... Args>
-        static void printf(const OutputLevel& level, const std::string& format, Args ... args) {
-            print(level, formatString(format, args...));
-        }
+    template<typename... Args>
+    static void printf(const OutputLevel& level, const std::string& format, Args ... args) {
+        print(level, formatString(format, args...));
+    }
 
-        static void print(const OutputLevel& level, const std::string& str);
-        static void setPrintFunction(void* pData, PrintFunction printFunc);
-        static void printUnknownCommand(const std::string& command);
+    void print(const OutputLevel& level, const std::string& str);
+    void setPrintCallback(void* pData, PrintCallback printFunc);
+    void printUnknownCommand(const std::string& command);
 
-    private:
-        static PrintFunction printFunc;
-        static void* printFuncData;
-    };
+    extern PrintCallback printFunc;
+    extern void* printFuncData;
 
     class Command;
 
-    typedef void(*CommandCall)(void* pData, Command& command, const std::vector<std::string>& args);
+    enum CommandRunningFrom : unsigned short {
+        ALIAS = 1, // an alias is called
+        LOOP_ALIAS = 2, // an active loop alias
+        FILE = 4, // exec command is used
+        CONSOLE = 8, // user types manually on console
+        INTERNAL = 16 // a command calls another command or something like that
+#ifdef SWEATCI_COMMAND_RUNNING_FROM_EXTRA
+        ,SWEATCI_COMMAND_RUNNING_FROM_EXTRA
+#endif
+    };
+
+    struct CommandContext {
+        std::vector<std::string> args{};
+
+        Command* pCommand = nullptr;
+
+        std::string filePath = "";
+        unsigned short runningFrom; // see CommandRunningFrom
+        size_t lineIndex = 0, columnIndex = 0, lineCount = 0;
+    };
+
+    typedef void(*CommandCallback)(CommandContext& ctx);
 
     class Command {
     public:
         Command() {}
 
         Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs,
-            CommandCall commandCallFunc, const std::string& usage, void* pData = nullptr);
+            CommandCallback commandCallFunc, const std::string& usage, void* pData = nullptr);
         
-        static bool getCommand(const std::string& name, Command& outCommand, bool printError);
+        static bool getCommand(const std::string& name, Command*& pCommandOut, bool printError);
         
         static const std::vector<Command>& getCommands();
         
@@ -132,7 +149,7 @@ namespace SweatCI {
 
         static void clear();
         
-        void run(const std::vector<std::string>& args);
+        void run(CommandContext& ctx);
 
         std::string name = "";
         std::string usage = "";
@@ -140,8 +157,7 @@ namespace SweatCI {
         unsigned char minArgs = 0;
         unsigned char maxArgs = 0;
         
-        CommandCall commandCallFunc = nullptr;
-
+        CommandCallback callback = nullptr;
         void* pData = nullptr;
 
     private:
@@ -151,31 +167,34 @@ namespace SweatCI {
     namespace BaseCommands {
         void init(std::unordered_map<std::string, std::string>* variables);
 
-        void help(void*, Command&, const std::vector<std::string>& args);
-        void commands(void*, Command&, const std::vector<std::string>&);
-        void echo(void*, Command&, const std::vector<std::string>& args);
-        void alias(void* pData, Command&, const std::vector<std::string>& args);
-        void getVariables(void* pData, Command&, const std::vector<std::string>&);
-        void variable(void* pData, Command&, const std::vector<std::string>& args);
-        void incrementvar(void* pData, Command&, const std::vector<std::string>& args);
-        void exec(void* pData, Command&, const std::vector<std::string>& args);
-        void toggle(void* pData, Command&, const std::vector<std::string>& args);
+        void help(CommandContext& ctx);
+        void commands(CommandContext& ctx);
+        void echo(CommandContext& ctx);
+        void alias(CommandContext& ctx);
+        void getVariables(CommandContext& ctx);
+        void variable(CommandContext& ctx);
+        void incrementvar(CommandContext& ctx);
+        void exec(CommandContext& ctx);
+        void toggle(CommandContext& ctx);
     };
 
     class Lexer {
     public:
-        Lexer(const std::string& input);
+        Lexer(const CommandContext& ctx, const std::string& input);
 
         Token nextToken();
 
+        CommandContext ctx;
     private:
-        bool isVariable(const std::string& identifier);
+        /// @note skips newline
+        /// @return true if is newline
+        bool nextPosition();
         bool isCommand(const std::string& commandName);
         Token parseToken();
         Token parseString();
 
         std::string input;
-        size_t position;
+        size_t position = 0;
         Token lastToken;
     };
 
@@ -238,12 +257,12 @@ namespace SweatCI {
 
         /// @brief Searches for the CVAR and returns it to a buffer
         /// @return false if could not get cvar
-        static bool getCvar(const std::string& name, CVariable& buf);
+        static bool getCvar(const std::string& name, CVariable*& pBuf);
 
     private:
         static std::unordered_map<std::string, CVariable> cvars;
         
-        static void asCommand(void* pData, Command& command, const std::vector<std::string>& args);
+        static void asCommand(CommandContext& ctx);
     };
 
     extern std::vector<std::string> loopAliasesRunning;
@@ -253,7 +272,8 @@ namespace SweatCI {
 
     class Parser {
     public:
-        Parser(Lexer *lexer, std::unordered_map<std::string, std::string>* variables);
+        Parser(Lexer* pLexer, std::unordered_map<std::string, std::string>* pVariables);
+        /// @param context should set the runningFrom variable as well as file related variables before calling this function
         void parse();
 
         unsigned short aliasMaxCalls = 50000;
@@ -268,10 +288,10 @@ namespace SweatCI {
         void handleAliasLexer(const std::string& input);
 
         Token currentToken;
-        Lexer *pLexer = nullptr;
+        Lexer* pLexer = nullptr;
         std::unordered_map<std::string, std::string>* pVariables;
         std::string getVariableFromCurrentTokenValue();
     };
 
-    void execConfigFile(const std::string& path, std::unordered_map<std::string, std::string>* pVariables);
+    void execConfigFile(CommandContext ctx, const std::string& path, std::unordered_map<std::string, std::string>* pVariables);
 }
