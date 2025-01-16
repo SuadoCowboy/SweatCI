@@ -113,7 +113,7 @@ namespace SweatCI {
         LOOP_ALIAS = 2, // an active loop alias
         FILE = 4, // exec command is used
         CONSOLE = 8, // user types manually on console
-        INTERNAL = 16 // a command calls another command or something like that
+        INTERNAL = 16 // a function(NOT COMMAND) calls a command or something like that. This means that this flag probably will never be used with the others
 #ifdef SWEATCI_COMMAND_RUNNING_FROM_EXTRA
         ,SWEATCI_COMMAND_RUNNING_FROM_EXTRA
 #endif
