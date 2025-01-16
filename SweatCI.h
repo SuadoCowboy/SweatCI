@@ -201,11 +201,23 @@ namespace SweatCI {
     template<typename T>
     std::string numberToString(T value) {
         std::string str = std::to_string(value);
-	if (str != "0") {
-        	str.erase(str.find_last_not_of('0') + 1, std::string::npos);
-        	str.erase(str.find_last_not_of('.') + 1, std::string::npos);
-	}
-        return str;
+        std::stringstream out;
+
+        for (size_t i = 0; i < str.size(); ++i) {
+            if (str[i] == '.') {
+                while (str.back() == '0') {
+                    str.pop_back();
+                    if (str.back() == '.') {
+                        str.pop_back();
+                        break;
+                    }
+                }
+            }
+
+            out << str[i];
+        }
+
+        return out.str();
     }
 
     namespace Utils {
