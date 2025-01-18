@@ -133,10 +133,10 @@ namespace SweatCI {
 
     class Command {
     public:
-        Command() {}
-
         Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs,
-            CommandCallback commandCallFunc, const std::string& usage, void* pData = nullptr);
+            CommandCallback callback, const std::string& usage, void* pData = nullptr);
+
+        Command() {}
         
         static bool getCommand(const std::string& name, Command*& pCommandOut, bool printError);
         
@@ -160,9 +160,13 @@ namespace SweatCI {
         CommandCallback callback = nullptr;
         void* pData = nullptr;
 
-    private:
         static std::vector<Command> commands;
     };
+
+    void registerCommand(const std::string& name, unsigned char minArgs, unsigned char maxArgs,
+            CommandCallback callback, const std::string& usage, void* pData = nullptr);
+
+    void registerCommand(const Command& command);
 
     namespace BaseCommands {
         void init(std::unordered_map<std::string, std::string>* variables);

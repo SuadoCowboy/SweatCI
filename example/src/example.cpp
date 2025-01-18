@@ -70,8 +70,9 @@ static void init() {
     SweatCI::setPrintCallback(nullptr, print);
     SweatCI::BaseCommands::init(&variables);
 
-    SweatCI::Command("info_self", 0, 10, infoSelfCommand, "- prints out its own context");
-    SweatCI::Command("quit", 0, 0, setRunningToFalseCommand, "- quits");
+    SweatCI::registerCommand("info_self", 0, 10, infoSelfCommand, "- prints out its own context");
+
+    SweatCI::registerCommand("quit", 0, 0, setRunningToFalseCommand, "- quits");
 
     SweatCI::CVARStorage::setCvar("t_int",
         &test1,

@@ -92,16 +92,23 @@ namespace SweatCI {
     PrintCallback printFunc = nullptr;
     void* printFuncData = nullptr;
 
-    Command::Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCallback commandCallFunc, const std::string& usage, void* pData)
-      : name(name), usage(usage), minArgs(minArgs), maxArgs(maxArgs), callback(commandCallFunc), pData(pData) {
+    void registerCommand(const std::string& name, unsigned char minArgs, unsigned char maxArgs,
+            CommandCallback callback, const std::string& usage, void* pData) {
+        Command::commands.emplace_back(name, minArgs, maxArgs, callback, usage, pData);
+    }
+
+    void registerCommand(const Command& command) {
+        Command::commands.push_back(command);
+    }
+
+    Command::Command(const std::string& name, unsigned char minArgs, unsigned char maxArgs, CommandCallback callback, const std::string& usage, void* pData)
+      : name(name), usage(usage), minArgs(minArgs), maxArgs(maxArgs), callback(callback), pData(pData) {
         for (const auto& c : commands) {
             if (c.name == name) {
                 printf(OutputLevel::ERROR, "command with name \"{}\" already exists\n", name);
                 return;
             }
         }
-
-        commands.emplace_back(*this);
     }
 
     bool Command::getCommand(const std::string& name, Command*& pCommandOut, bool printError) {
@@ -149,15 +156,15 @@ namespace SweatCI {
 
     void BaseCommands::init(std::unordered_map<std::string, std::string>* pVariables) {
         // Add commands
-        Command("help", 0, 1, help, "<command> - shows the usage of the command specified");
-        Command("commands", 0, 0, commands, "- shows a list of commands with their usages");
-        Command("echo", 1, 1, echo, "<message> - echoes a message to the console");
-        Command("alias", 1, 2, alias, "<var> <commands?> - creates/deletes variables", pVariables);
-        Command("variables", 0, 0, getVariables, "- list of variables", pVariables);
-        Command("variable", 1, 1, variable, "- shows variable value", pVariables);
-        Command("incrementvar", 4, 4, incrementvar, "<var|cvar> <minValue> <maxValue> <delta> - increments the value of a variable", pVariables);
-        Command("exec", 1, 1, exec, "- executes a .cfg file that contains SweatCI script", pVariables);
-        Command("toggle", 3, 3, toggle, "<var|cvar> <option1> <option2> - toggles value between option1 and option2", pVariables);
+        registerCommand("help", 0, 1, help, "<command> - shows the usage of the command specified");
+        registerCommand("commands", 0, 0, commands, "- shows a list of commands with their usages");
+        registerCommand("echo", 1, 1, echo, "<message> - echoes a message to the console");
+        registerCommand("alias", 1, 2, alias, "<var> <commands?> - creates/deletes variables", pVariables);
+        registerCommand("variables", 0, 0, getVariables, "- list of variables", pVariables);
+        registerCommand("variable", 1, 1, variable, "- shows variable value", pVariables);
+        registerCommand("incrementvar", 4, 4, incrementvar, "<var|cvar> <minValue> <maxValue> <delta> - increments the value of a variable", pVariables);
+        registerCommand("exec", 1, 1, exec, "- executes a .cfg file that contains SweatCI script", pVariables);
+        registerCommand("toggle", 3, 3, toggle, "<var|cvar> <option1> <option2> - toggles value between option1 and option2", pVariables);
     }
 
     void BaseCommands::help(CommandContext& ctx) {
@@ -523,7 +530,7 @@ namespace SweatCI {
 
     void CVARStorage::setCvar(const std::string& name, void* pData, void(*set)(void* pData, const std::string& value), std::string (*toString)(void* pData), const std::string& usage) {
         cvars[name] = {set, toString};
-        Command(name, 0, 1, asCommand, usage, pData);
+        registerCommand(name, 0, 1, asCommand, usage, pData);
     }
 
     bool CVARStorage::getCvar(const std::string& name, CVariable*& pBuf) {
