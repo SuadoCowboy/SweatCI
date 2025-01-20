@@ -99,12 +99,12 @@ namespace SweatCI {
         print(level, formatString(format, args...));
     }
 
-    void print(const OutputLevel& level, const std::string& str);
-    void setPrintCallback(void* pData, PrintCallback printFunc);
-    void printUnknownCommand(const std::string& command);
+    extern PrintCallback printCallback;
+    extern void* pPrintCallbackData;
 
-    extern PrintCallback printFunc;
-    extern void* printFuncData;
+    void print(const OutputLevel& level, const std::string& str);
+    void setPrintCallback(void* pData, PrintCallback callback);
+    void printUnknownCommand(const std::string& command);
 
     class Command;
 

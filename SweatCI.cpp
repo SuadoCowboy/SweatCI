@@ -72,25 +72,21 @@ namespace SweatCI {
         return "Token(" + tokenTypeToString(type) + ", \"" + value + "\")";
     }
 
-    void setPrintCallback(void* pData, PrintCallback _printFunc) {
-        printFunc = _printFunc;
-        printFuncData = pData;
+    PrintCallback printCallback = nullptr;
+    void* pPrintCallbackData = nullptr;
+
+    void setPrintCallback(void* pData, PrintCallback callback) {
+        printCallback = callback;
+        pPrintCallbackData = pData;
     }
 
     void print(const OutputLevel &level, const std::string& str) {
-        printFunc(printFuncData, level, str);
+        printCallback(pPrintCallbackData, level, str);
     }
 
     void printUnknownCommand(const std::string& command) {
         printf(OutputLevel::ERROR, "unknown command \"{}\"\n", command);
     }
-
-    void print(const OutputLevel& level, const std::string& str);
-    void setPrintCallback(void* pData, PrintCallback printFunc);
-    void printUnknownCommand(const std::string& command);
-
-    PrintCallback printFunc = nullptr;
-    void* printFuncData = nullptr;
 
     void registerCommand(const std::string& name, unsigned char minArgs, unsigned char maxArgs,
             CommandCallback callback, const std::string& usage, void* pData) {
