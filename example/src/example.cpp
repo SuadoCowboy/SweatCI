@@ -26,7 +26,7 @@ static std::string outputLevelToString(const SweatCI::OutputLevel &level) {
     case SweatCI::OutputLevel::WARNING:
         return "WARNING";
     
-    case SweatCI::OutputLevel::ERROR:
+    case SweatCI::OutputLevel::_ERROR:
         return "ERROR";
     };
 

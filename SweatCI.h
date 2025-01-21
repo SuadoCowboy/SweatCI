@@ -89,7 +89,8 @@ namespace SweatCI {
         DEFAULT = 0, // text that is not involved by user interaction
         ECHO, // any text that came from a command that is not an error
         WARNING,
-        ERROR, // anything that went wrong
+        // _ERROR needs a underscore because when including windows.h, it identifies as a macro
+        _ERROR, // anything that went wrong
     };
 
     typedef void(*PrintCallback)(void* pData, const OutputLevel& level, const std::string& message);

@@ -85,7 +85,7 @@ namespace SweatCI {
     }
 
     void printUnknownCommand(const std::string& command) {
-        printf(OutputLevel::ERROR, "unknown command \"{}\"\n", command);
+        printf(OutputLevel::_ERROR, "unknown command \"{}\"\n", command);
     }
 
     void registerCommand(const std::string& name, unsigned char minArgs, unsigned char maxArgs,
@@ -101,7 +101,7 @@ namespace SweatCI {
       : name(name), usage(usage), minArgs(minArgs), maxArgs(maxArgs), callback(callback), pData(pData) {
         for (const auto& c : commands) {
             if (c.name == name) {
-                printf(OutputLevel::ERROR, "command with name \"{}\" already exists\n", name);
+                printf(OutputLevel::_ERROR, "command with name \"{}\" already exists\n", name);
                 return;
             }
         }
@@ -195,7 +195,7 @@ namespace SweatCI {
         
         if (ctx.args.size() == 1) {
             if (pVariables->count(ctx.args[0]) == 0) {
-                SweatCI::printf(SweatCI::ERROR, "\"{}\" variable not found\n", ctx.args[0]);
+                SweatCI::printf(SweatCI::_ERROR, "\"{}\" variable not found\n", ctx.args[0]);
                 return;
             }
 
@@ -218,14 +218,14 @@ namespace SweatCI {
         {
             Command* pCommand = nullptr;
             if (Command::getCommand(ctx.args[0], pCommand, false)) {
-                print(OutputLevel::ERROR, "varName is a command name, therefore this variable can not be created\n");
+                print(OutputLevel::_ERROR, "varName is a command name, therefore this variable can not be created\n");
                 return;
             }
         }
 
         std::regex whitespace_regex("\\S+"); // TODO: regex is unecessary here I think(use old ways to do this instead of using regex)
         if (!std::regex_match(ctx.args[0], whitespace_regex)) {
-            print(OutputLevel::ERROR, "variable name can not have whitespace.\n");
+            print(OutputLevel::_ERROR, "variable name can not have whitespace.\n");
             return;
         }
 
@@ -256,7 +256,7 @@ namespace SweatCI {
         const std::string& key = ctx.args[0];
         auto it = pVariables->find(key);
         if (it == pVariables->end()) {
-            printf(OutputLevel::ERROR, "variable \"{}\" does not exist\n", key);
+            printf(OutputLevel::_ERROR, "variable \"{}\" does not exist\n", key);
             return;
         }
 
@@ -273,7 +273,7 @@ namespace SweatCI {
             return;
 
         if (minValue > maxValue) {
-            print(OutputLevel::ERROR, "minValue is higher than maxValue\n");
+            print(OutputLevel::_ERROR, "minValue is higher than maxValue\n");
             return;
         }
 
@@ -301,7 +301,7 @@ namespace SweatCI {
         // var
         auto it = pVariables->find(ctx.args[0]);
         if (it == pVariables->end()) {
-            printf(OutputLevel::ERROR, "unknown variable \"{}\"\n", ctx.args[0]);
+            printf(OutputLevel::_ERROR, "unknown variable \"{}\"\n", ctx.args[0]);
             return;
         }
 
@@ -345,7 +345,7 @@ namespace SweatCI {
         // var
         auto it = pVariables->find(ctx.args[0]);
         if (it == pVariables->end()) {
-            printf(OutputLevel::ERROR, "unknown variable \"{}\"\n", ctx.args[0]);
+            printf(OutputLevel::_ERROR, "unknown variable \"{}\"\n", ctx.args[0]);
             return;
         }
 
@@ -501,7 +501,7 @@ namespace SweatCI {
 
             return true;
         } catch (...) {
-            printf(ERROR, "\"{}\" is not a boolean\n", str);
+            printf(_ERROR, "\"{}\" is not a boolean\n", str);
             return false;
         }
     }
@@ -512,7 +512,7 @@ namespace SweatCI {
             out = static_cast<type>(convertFunc(str)); \
             return true; \
         }  catch (...) { \
-            printf(ERROR, wrongTypeFmt, str); \
+            printf(_ERROR, wrongTypeFmt, str); \
             return false; \
         } \
     } \
@@ -540,7 +540,7 @@ namespace SweatCI {
     void CVARStorage::asCommand(CommandContext& ctx) {
         CVariable* pCvar = nullptr;
         if (!getCvar(ctx.pCommand->name, pCvar)) {
-            printf(ERROR, "\"{}\" CVAR not found", ctx.pCommand->name);
+            printf(_ERROR, "\"{}\" CVAR not found", ctx.pCommand->name);
             return;
         }
 
@@ -814,7 +814,7 @@ namespace SweatCI {
         std::ifstream file(path);
 
         if (!file) {
-            printf(OutputLevel::ERROR, "could not load file \"{}\"\n", path);
+            printf(OutputLevel::_ERROR, "could not load file \"{}\"\n", path);
             return;
         }
 
