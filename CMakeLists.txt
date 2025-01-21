@@ -9,7 +9,7 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -Werror")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-project(SweatCI VERSION 0.4.1 LANGUAGES CXX)
+project(SweatCI VERSION 0.4.2 LANGUAGES CXX)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
