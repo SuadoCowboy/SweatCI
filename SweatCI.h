@@ -231,32 +231,48 @@ namespace SweatCI {
             bool getFloat(const std::string& str, float& out);
             bool getDouble(const std::string& str, double& out);
             bool getInteger(const std::string& str, int& out);
+            bool getUnsignedInteger(const std::string& str, unsigned int& out);
             bool getShort(const std::string& str, short& out);
             bool getUnsignedShort(const std::string& str, unsigned short& out);
             bool getUnsignedChar(const std::string& str, unsigned char& out);
         }
     
         namespace Cvar {
-            void setString(void* pData, const std::string& value);
-            std::string getString(void* pData);
+#define _MAKE_CVARUTILS_DEFINITIONS(name) \
+    void set ## name (void *pData, const std::string& value); \
+    std::string get ## name (void* pData);
 
-            void setBoolean(void* pData, const std::string& value);
-            std::string getBoolean(void* pData);
+            _MAKE_CVARUTILS_DEFINITIONS(String)
+            _MAKE_CVARUTILS_DEFINITIONS(Boolean)
+            _MAKE_CVARUTILS_DEFINITIONS(Double)
+            _MAKE_CVARUTILS_DEFINITIONS(Float)
+            _MAKE_CVARUTILS_DEFINITIONS(Integer)
+            _MAKE_CVARUTILS_DEFINITIONS(UnsignedInteger)
+            _MAKE_CVARUTILS_DEFINITIONS(Short)
+            _MAKE_CVARUTILS_DEFINITIONS(UnsignedShort)
+            _MAKE_CVARUTILS_DEFINITIONS(UnsignedChar)
 
-            void setFloat(void* pData, const std::string& value);
-            std::string getFloat(void* pData);
+#define _MAKE_CVARUTILS_BIT_DEFINITIONS_8BITS(name) \
+    _MAKE_CVARUTILS_DEFINITIONS(Bit1 ## name) \
+    _MAKE_CVARUTILS_DEFINITIONS(Bit2 ## name) \
+    _MAKE_CVARUTILS_DEFINITIONS(Bit3 ## name) \
+    _MAKE_CVARUTILS_DEFINITIONS(Bit4 ## name) \
+    _MAKE_CVARUTILS_DEFINITIONS(Bit5 ## name) \
+    _MAKE_CVARUTILS_DEFINITIONS(Bit6 ## name) \
+    _MAKE_CVARUTILS_DEFINITIONS(Bit7 ## name) \
+    _MAKE_CVARUTILS_DEFINITIONS(Bit8 ## name)
 
-            void setInteger(void* pData, const std::string& value);
-            std::string getInteger(void* pData);
-
-            void setShort(void* pData, const std::string& value);
-            std::string getShort(void* pData);
-
-            void setUnsignedShort(void* pData, const std::string& value);
-            std::string getUnsignedShort(void* pData);
-
-            void setUnsignedChar(void* pData, const std::string& value);
-            std::string getUnsignedChar(void* pData);
+            _MAKE_CVARUTILS_BIT_DEFINITIONS_8BITS(UnsignedChar)
+            
+            _MAKE_CVARUTILS_BIT_DEFINITIONS_8BITS(UnsignedShort)
+            _MAKE_CVARUTILS_DEFINITIONS(Bit9UnsignedShort)
+            _MAKE_CVARUTILS_DEFINITIONS(Bit10UnsignedShort)
+            _MAKE_CVARUTILS_DEFINITIONS(Bit11UnsignedShort)
+            _MAKE_CVARUTILS_DEFINITIONS(Bit12UnsignedShort)
+            _MAKE_CVARUTILS_DEFINITIONS(Bit13UnsignedShort)
+            _MAKE_CVARUTILS_DEFINITIONS(Bit14UnsignedShort)
+            _MAKE_CVARUTILS_DEFINITIONS(Bit15UnsignedShort)
+            _MAKE_CVARUTILS_DEFINITIONS(Bit16UnsignedShort)
         }
     }
 

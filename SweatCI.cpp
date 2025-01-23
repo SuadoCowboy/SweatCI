@@ -477,21 +477,64 @@ namespace SweatCI {
         return std::to_string(*(bool*)pData);
     }
 
-#define _MAKE_CVARUTILS_NUMBER_FUNCTIONS(type, convertFunc, setFuncName, getFuncName) \
-    void Utils::Cvar::setFuncName(void* pData, const std::string& value) { \
+#define _MAKE_CVARUTILS_NUMBER_FUNCTIONS(type, convertFunc, name) \
+    void Utils::Cvar:: set ## name (void* pData, const std::string& value) { \
         try { \
             *static_cast<type*>(pData) = convertFunc(value); \
         } catch (...) {return;} \
     } \
-    std::string Utils::Cvar::getFuncName(void* pData) { \
+    std::string Utils::Cvar:: get ## name (void* pData) { \
         return numberToString(*(type*)pData); \
     }
 
-    _MAKE_CVARUTILS_NUMBER_FUNCTIONS(float, std::stof, setFloat, getFloat);
-    _MAKE_CVARUTILS_NUMBER_FUNCTIONS(int, std::stoi, setInteger, getInteger);
-    _MAKE_CVARUTILS_NUMBER_FUNCTIONS(short, (short)std::stoi, setShort, getShort);
-    _MAKE_CVARUTILS_NUMBER_FUNCTIONS(unsigned short, (unsigned short)std::stoi, setUnsignedShort, getUnsignedShort);
-    _MAKE_CVARUTILS_NUMBER_FUNCTIONS(unsigned char, (unsigned char)std::stoi, setUnsignedChar, getUnsignedChar);
+    _MAKE_CVARUTILS_NUMBER_FUNCTIONS(double, std::stod, Double)
+    _MAKE_CVARUTILS_NUMBER_FUNCTIONS(float, std::stof, Float)
+    
+    _MAKE_CVARUTILS_NUMBER_FUNCTIONS(int, std::stoi, Integer)
+    _MAKE_CVARUTILS_NUMBER_FUNCTIONS(unsigned int, (unsigned int)std::stol, UnsignedInteger)
+    
+    _MAKE_CVARUTILS_NUMBER_FUNCTIONS(short, (short)std::stoi, Short)
+    _MAKE_CVARUTILS_NUMBER_FUNCTIONS(unsigned short, (unsigned short)std::stoi, UnsignedShort)
+    
+    _MAKE_CVARUTILS_NUMBER_FUNCTIONS(unsigned char, (unsigned char)std::stoi, UnsignedChar)
+
+#define _MAKE_CVARUTILS_BIT_FUNCTIONS(type, bit, power, convertFunc, name) \
+    void Utils::Cvar:: setBit ## bit ## name (void* pData, const std::string& value) { \
+        try { \
+            type number = convertFunc(value); \
+            if (number > 0) *static_cast<type*>(pData) |= power; \
+            else *static_cast<type*>(pData) &= ~bit; \
+        } catch (...) {return;} \
+    } \
+    std::string Utils::Cvar:: getBit ## bit ## name (void* pData) { \
+        return std::to_string(((*(type*)pData) & power) == power); \
+    }
+
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned char, 1,1, (unsigned char)std::stoi, UnsignedChar)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned char, 2,2, (unsigned char)std::stoi, UnsignedChar)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned char, 3,4, (unsigned char)std::stoi, UnsignedChar)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned char, 4,8, (unsigned char)std::stoi, UnsignedChar)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned char, 5,16, (unsigned char)std::stoi, UnsignedChar)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned char, 6,32, (unsigned char)std::stoi, UnsignedChar)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned char, 7,64, (unsigned char)std::stoi, UnsignedChar)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned char, 8,128, (unsigned char)std::stoi, UnsignedChar)
+
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 1,1, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 2,2, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 3,4, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 4,8, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 5,16, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 6,32, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 7,64, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 8,128, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 9,256, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 10,512, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 11,1024, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 12,2048, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 13,4096, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 14,8192, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 15,16384, (unsigned short)std::stoi, UnsignedShort)
+    _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned short, 16,32768, (unsigned short)std::stoi, UnsignedShort)
 
     bool Utils::Command::getBoolean(const std::string& str, bool& out) {
         try {
@@ -506,23 +549,27 @@ namespace SweatCI {
         }
     }
 
-#define _MAKE_COMMANDUTILS_FUNCTIONS(type, convertFunc, getFuncName, wrongTypeFmt) \
-    bool Utils::Command::getFuncName(const std::string& str, type& out) { \
+#define _MAKE_COMMANDUTILS_FUNCTIONS(type, convertFunc, funcName) \
+    bool Utils::Command::get ## funcName (const std::string& str, type& out) { \
         try { \
             out = static_cast<type>(convertFunc(str)); \
             return true; \
         }  catch (...) { \
-            printf(_ERROR, wrongTypeFmt, str); \
+            printf(_ERROR, "\"{}\" is not a " #type "\n", str); \
             return false; \
         } \
-    } \
+    }
 
-    _MAKE_COMMANDUTILS_FUNCTIONS(float, std::stof, getFloat, "\"{}\" is not a float\n");
-    _MAKE_COMMANDUTILS_FUNCTIONS(double, std::stod, getDouble, "\"{}\" is not a double\n");
-    _MAKE_COMMANDUTILS_FUNCTIONS(int, std::stoi, getInteger, "\"{}\" is not a integer\n");
-    _MAKE_COMMANDUTILS_FUNCTIONS(short, std::stoi, getShort, "\"{}\" is not a short\n");
-    _MAKE_COMMANDUTILS_FUNCTIONS(unsigned short, std::stoi, getUnsignedShort, "\"{}\" is not a unsigned short\n");
-    _MAKE_COMMANDUTILS_FUNCTIONS(unsigned char, std::stoi, getUnsignedChar, "\"{}\" is not a unsigned char\n");
+    _MAKE_COMMANDUTILS_FUNCTIONS(double, std::stod, Double)
+    _MAKE_COMMANDUTILS_FUNCTIONS(float, std::stof, Float)
+
+    _MAKE_COMMANDUTILS_FUNCTIONS(int, std::stoi, Integer)
+    _MAKE_COMMANDUTILS_FUNCTIONS(unsigned int, std::stol, UnsignedInteger)
+
+    _MAKE_COMMANDUTILS_FUNCTIONS(short, std::stoi, Short)
+    _MAKE_COMMANDUTILS_FUNCTIONS(unsigned short, std::stoi, UnsignedShort)
+
+    _MAKE_COMMANDUTILS_FUNCTIONS(unsigned char, std::stoi, UnsignedChar)
 
     void CVARStorage::setCvar(const std::string& name, void* pData, void(*set)(void* pData, const std::string& value), std::string (*toString)(void* pData), const std::string& usage) {
         cvars[name] = {set, toString};
