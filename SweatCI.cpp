@@ -459,22 +459,22 @@ namespace SweatCI {
     }
 
     void Utils::Cvar::setString(void* pData, const std::string& value) {
-        *(std::string*)pData = value;
+        *static_cast<std::string*>(pData) = value;
     }
 
     std::string Utils::Cvar::getString(void* pData) {
-        return *(std::string*)pData;
+        return *static_cast<std::string*>(pData);
     }
 
     void Utils::Cvar::setBoolean(void* pData, const std::string& value) {
         try {
-            if (std::stoi(value) <= 0) *(bool*)pData = false;
-            else *(bool*)pData = true;
+            if (std::stoi(value) <= 0) *static_cast<bool*>(pData) = false;
+            else *static_cast<bool*>(pData) = true;
         } catch (...) {return;}
     }
 
     std::string Utils::Cvar::getBoolean(void* pData) {
-        return std::to_string(*(bool*)pData);
+        return std::to_string(*static_cast<bool*>(pData));
     }
 
 #define _MAKE_CVARUTILS_NUMBER_FUNCTIONS(type, convertFunc, name) \
@@ -484,7 +484,7 @@ namespace SweatCI {
         } catch (...) {return;} \
     } \
     std::string Utils::Cvar:: get ## name (void* pData) { \
-        return numberToString(*(type*)pData); \
+        return numberToString(*static_cast<type*>(pData)); \
     }
 
     _MAKE_CVARUTILS_NUMBER_FUNCTIONS(double, std::stod, Double)
@@ -507,7 +507,7 @@ namespace SweatCI {
         } catch (...) {return;} \
     } \
     std::string Utils::Cvar:: getBit ## bit ## name (void* pData) { \
-        return std::to_string(((*(type*)pData) & power) == power); \
+        return std::to_string(((*static_cast<type*>(pData)) & power) == power); \
     }
 
     _MAKE_CVARUTILS_BIT_FUNCTIONS(unsigned char, 1,1, (unsigned char)std::stoi, UnsignedChar)
